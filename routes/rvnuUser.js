@@ -14,6 +14,6 @@ router.get('/getUserBankAccount/:userId', getUserBankAccount)
 router.get('/getUserRvnuAccount/:num', getUserRvnuAccount)
 router.get('/getName/:num', getName)
 router.get('/userCodeUsed/:rvnuCodeId', getUserWhosCodeRvnuUsed )
-router.post('/updateAssets/:accountId/paymentId/rvnuCodeId', updateTotalAssets)
+router.get('/updateAssets/:accountId/:paymentId/:rvnuCodeId', updateTotalAssets)
 
 export default router

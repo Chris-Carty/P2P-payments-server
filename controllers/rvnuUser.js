@@ -78,28 +78,27 @@ export const getUserWhosCodeRvnuUsed = async (req, res) => {
 
 export const updateTotalAssets = async (req, res) => {
 
-  /*
-
   // Get commission earned from the transaction 
-  // query 1
   // Updates a users TotalAssetsOwed && TotalAssets
   const accountId = req.params.accountId
   const paymentId = req.params.paymentId
   const rvnuCodeId = req.params.rvnuCodeId
 
-  const query = "UPDATE RvnuAccount SET TotalAssetsOwed = '"+ sortCode +"', AccountNumber = ${}, Tl_providerId = '"+ providerId +"'WHERE AccountID = '"+ accountId +"'"
-
   try {
     await connect(config)
-   
-    const result = await query`SELECT AccountID, FirstName, MobileNumber, Email FROM RvnuAccount WHERE RvnuCodeID =${rvnuCodeId}`
-    res.status(200).json("Successfully updated user total assets");
+    const result = await query`SELECT UserCommission FROM RvnuTransaction WHERE PaymentID=${paymentId} AND RvnuCodeID=${rvnuCodeId}`
+    const commission = result.recordset[0].UserCommission
+    
+    try {
+      await connect(config)
+      const result = await query`UPDATE RvnuAccount SET TotalAssetsOwed = TotalAssetsOwed + ${commission}, TotalAssets = TotalAssets + ${commission} WHERE AccountID = ${accountId} AND RvnuCodeID=${rvnuCodeId}`
+    } catch (err) {
+        res.status(409).send({ message: err.message })
+    }
 
   } catch (err) {
       res.status(409).send({ message: err.message })
   }
 
-  */
- 
 }
 

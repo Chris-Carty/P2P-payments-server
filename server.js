@@ -8,7 +8,6 @@ import twilioVerify from './routes/twilioVerify.js'
 import payment from './routes/tl_payment.js'
 import rvnu from './routes/rvnuCode.js'
 import user from './routes/rvnuUser.js'
-import merchant from './routes/rvnuMerchant.js'
 import providers from './routes/tl_providers.js'
 import * as tlSigning from 'truelayer-signing'
 
@@ -23,20 +22,17 @@ app.use('/payment', payment)
 app.use('/rvnu', rvnu)
 app.use('/providers', providers)
 app.use('/user', user)
-app.use('/merchant', merchant)
 
 
 app.get('/', (req, res) => {
     res.json("welcome to RVNU")
 })
 
-
 // ########## WEBHOOK NOTIFICATIONS ########## 
 
 // Webhook URI set in the TrueLayer console
 
 /*
-
 const allowedJkus = {
     "https://webhooks.truelayer.com/.well-known/jwks": true,
     "https://webhooks.truelayer-sandbox.com/.well-known/jwks": true,
