@@ -1,5 +1,6 @@
 import 'dotenv/config'
-import conn from './config/dbConfig.js'
+import mssql from 'mssql'
+import config from './config/dbConfig.js'
 import express from 'express'
 import axios from 'axios'
 import cors from 'cors'
@@ -11,6 +12,7 @@ import merchant from './routes/rvnuMerchant.js'
 import providers from './routes/tl_providers.js'
 import * as tlSigning from 'truelayer-signing'
 
+const { connect, query } = mssql
 
 const app = express()
 app.use(express.json())
@@ -66,29 +68,21 @@ async function verify_hook(req) {
   }
 */
 
-export const paymentExecuted = (status, payment_id, event_id, executed_at) => {
+const paymentExecuted = async (status, payment_id, event_id, executed_at) => {
   // Updates database to reflect 'payment_executed' status
-  const query = "UPDATE RvnuTransaction SET Status = '"+ status +"', EventID = '"+ event_id +"', Webhook_Datetime = '"+ executed_at +"'WHERE PaymentID = '"+ payment_id +"'"
-
   try {
-    conn.query(query, (err) => {
-      if(err) return console.log(err)
-      console.log("Successfully updated payment status: payment_executed'");
-    });
+      await connect(config)
+      const result = await query`UPDATE RvnuTransaction SET Status = ${status}, EventID = ${event_id}, Webhook_Datetime = ${executed_at} WHERE PaymentID = ${payment_id}`
   } catch (err) {
       console.log(err)
   }
 }
 
-export const paymentFailed = (status, payment_id, event_id, failed_at, description) => {
+const paymentFailed = async (status, payment_id, event_id, failed_at, description) => {
   // Updates database to reflect 'payment_failed' status
-  const query = "UPDATE RvnuTransaction SET Status = '"+ status +"', EventID = '"+ event_id +"', Webhook_Datetime = '"+ failed_at +"', Webhook_Description = '"+ description +"' WHERE PaymentID = '"+ payment_id +"'"
-
   try {
-    conn.query(query, (err) => {
-      if(err) return console.log(err)
-      console.log("Successfully updated payment status: payment_failed");
-    });
+      await connect(config)
+      const result = await query`UPDATE RvnuTransaction SET Status = ${status}, EventID = ${event_id}, Webhook_Datetime = ${failed_at}, Webhook_Description = ${description} WHERE PaymentID = ${payment_id}`
   } catch (err) {
       console.log(err)
   }

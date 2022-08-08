@@ -9,7 +9,7 @@ const router = express.Router()
 
 router.post('/getAccessToken', getAccessToken)
 router.post('/initiate/:accessToken', initiatePayment)
-router.post('/storeTransaction/:transactionID/:merchantID/:accountID/:remitterID/:rvnuCodeID/:currency/:amount', storeTransaction)
+router.post('/storeTransaction/:transactionID/:merchantID/:accountID/:rvnuCodeID/:currency/:amount', storeTransaction)
 router.get('/status/:paymentId', getPaymentStatus)
 
 

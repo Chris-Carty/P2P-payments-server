@@ -1,7 +1,7 @@
 //https://www.twilio.com/docs/
 import dotenv from 'dotenv'
 import twilio from 'twilio' 
-import conn from '../config/dbConfig.js'
+import connection from '../config/dbConfig.js'
 
 dotenv.config({ path: '../.env' }); // Load environment variables into process.env
 
@@ -75,7 +75,7 @@ export const sendCommissionSms = async (req, res) => {
   const query1 = "SELECT UserCommission FROM RvnuTransaction WHERE PaymentID ='"+ paymentId +"' AND RvnuCodeID ='"+ rvnuCodeId +"' LIMIT 1"
 
   try {
-    conn.query(query1, (err, rows) => {
+    connection.query(query1, (err, rows) => {
       if(err) return res.status(409).send({ message: err.message })
 
       const count = rows.length;

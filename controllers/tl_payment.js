@@ -2,7 +2,10 @@ import dotenv from 'dotenv'
 import axios from 'axios'
 import { randomUUID } from 'crypto'
 import * as tlSigning from 'truelayer-signing'
-import conn from '../config/dbConfig.js'
+import mssql from 'mssql'
+import config from '../config/dbConfig.js'
+
+const { connect, query } = mssql
 
 dotenv.config({ path: '../.env' }); // Load environment variables into process.env
 
@@ -110,10 +113,10 @@ export const initiatePayment = async (req, res) => {
     }
   };
 
-  axios(request)//
+  axios(request)
   // 204 means success
   .then(response => 
-    res.json('https://payment.truelayer-sandbox.com/payments#payment_id=' + response.data.id + '&resource_token=' + response.data.resource_token + '&return_uri=http://localhost:3001')
+    res.json('https://payment.truelayer-sandbox.com/payments#payment_id=' + response.data.id + '&resource_token=' + response.data.resource_token + '&return_uri=http://localhost:3000')
     )
   // 401 means either the access token is invalid, or the signature is invalid.
   .catch(err => console.warn(`${err.response.status} ${JSON.stringify(err.response.data)}`));
@@ -126,40 +129,33 @@ export const storeTransaction = async (req, res) => {
     const paymentID = req.params.transactionID
     const merchantID = req.params.merchantID
     const accountID = req.params.accountID
-    const remitterProviderID = req.params.remitterID
     const rvnuCodeID = req.params.rvnuCodeID
     const currency = req.params.currency
     const amount = req.params.amount
-    // To do... round to 2 DP 
     const rvnuFee = (amount * 0.007)
     const rvnuFeeRounded = Math.round((rvnuFee + Number.EPSILON) * 100) / 100
     const reference = 'RVNU-TEST'
 
-    // Get the % commission this merchant has agreed to pay
-    const query1 = "SELECT CommissionPercentage FROM Merchant WHERE MerchantID='" + merchantID + "' LIMIT 1"
-
     try {
-      conn.query(query1, (err, rows) => {
-        if(err) return res.status(409).send({ message: err.message })
-        //res.status(200).json({data});
-        const count = rows.length;
+      await connect(config)
+      // Get the % commission this merchant has agreed to pay
+      const result = await query`SELECT CommissionPercentage FROM Merchant WHERE MerchantID=${merchantID}`
+      
 
-        if (count) {
+      if (result.recordset.length == 1) {
 
-            const merchantCommissionRate = rows.map(i => i.CommissionPercentage)[0];
-            // Calc how much the RVNU user who's code was used will earn 
-            // To do... round to 2 DP 
+            const merchantCommissionRate =result.recordset[0].CommissionPercentage;
+            // Calc commision for user who's code was used
             const userCommissionEarned  = amount * (merchantCommissionRate / 100)
             const userCommissionRounded = Math.round((userCommissionEarned + Number.EPSILON) * 100) / 100
 
-            // Make a record of this transaction in the database;
-            const query2 = "INSERT INTO RvnuTransaction (PaymentID, MerchantID, AccountID, RemitterProviderID, DateTime, Currency, TotalAmount, RvnuCodeID, RvnuFee, UserCommission, Reference) VALUES ('"+ paymentID + "', '" + merchantID + "', '" + accountID + "', '" + remitterProviderID + "', NOW(), '" + currency + "', '" + amount +  "', '" + rvnuCodeID + "', '" + rvnuFeeRounded + "', '" + userCommissionRounded + "', '" + reference + "')"
-
+            // Make a record of this transaction in the database
             try {
-              conn.query(query2, (err) => {
-                if(err) return res.status(409).send({ message: err.message })
-                res.status(200).json("Successfully stored transaction");
-              });
+              await connect(config)
+              const result = await query`INSERT INTO RvnuTransaction (PaymentID, MerchantID, AccountID, DateTime, Currency, TotalAmount, RvnuCodeID, RvnuFee, UserCommission, Reference) VALUES (${paymentID}, ${merchantID}, ${accountID}, CURRENT_TIMESTAMP, ${currency}, ${amount}, ${rvnuCodeID}, ${rvnuFeeRounded}, ${userCommissionRounded}, ${reference})`
+
+              res.status(200).json("Successfully stored transaction");
+    
             } catch (err) {
                 res.status(409).send({ message: err.message })
             }
@@ -168,7 +164,6 @@ export const storeTransaction = async (req, res) => {
           console.log('error: could not get merchant commission');
         }
 
-      });
     } catch (err) {
         res.status(409).send({ message: err.message })
     }
@@ -178,16 +173,13 @@ export const storeTransaction = async (req, res) => {
 export const getPaymentStatus = async (req, res) => {
   // Gets users preferred payment account
   const paymentId = req.params.paymentId
-  
-  const query = "SELECT Status FROM RvnuTransaction WHERE PaymentID ='"+ paymentId +"' LIMIT 1"
 
   try {
-    conn.query(query, (err, data) => {
-      if(err) return res.status(409).send({ message: err.message })
-      res.status(200).json({data});
-    });
+    await connect(config)
+    const result = await query`SELECT Status FROM RvnuTransaction WHERE PaymentID =${paymentId}`
+    res.json(result.recordset).status(200)
   } catch (err) {
-      res.status(409).send({ message: err.message })
+    res.status(409).send({ message: err.message })
   }
 
 }
