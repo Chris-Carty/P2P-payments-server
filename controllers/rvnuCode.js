@@ -18,7 +18,7 @@ export const generateRvnuCode = async (req, res) => {
   // AND link this RVNUcode to a user account
   try {
     await connect(config)
-    const result = await query`INSERT INTO RvnuCode (RvnuCodeID, RvnuCode, DateGenerated, Expiry) VALUES (${rvnuCodeId}, ${rvnuCode}, CURRENT_TIMESTAMP, DATE_ADD(CURRENT_TIMESTAMP, INTERVAL 1 MONTH)) ; UPDATE RvnuAccount SET RvnuCodeID = ${rvnuCodeId} WHERE AccountID = ${userId}`
+    const result = await query`INSERT INTO RvnuCode (RvnuCodeID, RvnuCode, DateGenerated, Expiry) VALUES (${rvnuCodeId}, ${rvnuCode}, CURRENT_TIMESTAMP, DATEADD(month,1,CURRENT_TIMESTAMP)) ; UPDATE RvnuAccount SET RvnuCodeID = ${rvnuCodeId} WHERE AccountID = ${userId}`
     res.status(200).json({ 'RvnuCodeID': rvnuCodeId});
     
   } catch (err) {

@@ -27,8 +27,7 @@ CREATE TABLE dbo.RvnuAccount
  TotalAssets decimal(10,2),
  AccountCreated datetime NOT NULL,
  CONSTRAINT AK_MobileNumber UNIQUE(MobileNumber),
- CONSTRAINT AK_Email UNIQUE(Email),
- CONSTRAINT AK_RvnuCodeID UNIQUE(RvnuCodeID)        
+ CONSTRAINT AK_Email UNIQUE(Email),      
 );
 GO
 
