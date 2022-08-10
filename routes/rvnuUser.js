@@ -5,7 +5,9 @@ import { updateBankAccount,
          getName, 
          getUserWhosCodeRvnuUsed ,
          updateTotalAssets,
-         createRvnuAccount
+         createRvnuAccount,
+         login,
+         forgotPassword
         } from '../controllers/rvnuUser.js'
 
 const router = express.Router()
@@ -17,5 +19,7 @@ router.get('/getName/:num', getName)
 router.get('/userCodeUsed/:rvnuCodeId', getUserWhosCodeRvnuUsed )
 router.get('/updateAssets/:accountId/:paymentId/:rvnuCodeId', updateTotalAssets)
 router.post('/register/:firstname/:lastname/:mobile/:email/:password/:providerId/:accountNum/:sortCode', createRvnuAccount)
+router.get('/login/:email/:password/', login)
+router.get('/forgotPassword/:email/', forgotPassword)
 
 export default router

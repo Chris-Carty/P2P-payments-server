@@ -17,7 +17,7 @@ CREATE TABLE dbo.RvnuAccount
  LastName varchar(50) NOT NULL,
  MobileNumber varchar(50) NOT NULL,
  Email varchar(50) NOT NULL,
- Password varchar(50) NOT NULL,
+ Password varchar(150) NOT NULL,
  SortCode varchar(6) NOT NULL,
  AccountNumber varchar(8) NOT NULL,
  Tl_providerId varchar(50) NOT NULL,
@@ -96,7 +96,7 @@ CREATE TABLE dbo.Merchant
  MerchantID varchar(36) NOT NULL PRIMARY KEY, -- primary key column
  MerchantName varchar(20) NOT NULL,
  Email varchar(50) NOT NULL,
- Password varchar(50) NOT NULL,
+ Password varchar(150) NOT NULL,
  MinimumSpend decimal(10,2) NOT NULL,
  CommissionPercentage decimal(10,2) NOT NULL,
  SortCode varchar(6) NOT NULL,

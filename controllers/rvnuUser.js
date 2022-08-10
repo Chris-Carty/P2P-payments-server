@@ -1,8 +1,60 @@
 import mssql from 'mssql'
 import config from '../config/dbConfig.js'
 import { randomUUID } from 'crypto'
+import bcrypt from 'bcryptjs'
 
 const { connect, query } = mssql
+
+export const login = async (req, res) => {
+ 
+  const email = req.params.email
+  const password = req.params.password
+
+  try {
+    await connect(config)
+    const result = await query`SELECT Email, Password FROM RvnuAccount WHERE Email=${email}`
+ 
+    if (result.recordset.length === 1 ) {
+
+      const email_db =result.recordset[0].Email
+      const hash = result.recordset[0].Password
+
+      if (email === email_db && bcrypt.compareSync(password, hash)) {
+        res.json(true).status(200)
+      } else {
+        res.json(false).status(200)
+      }
+    } else {
+      res.json(false).status(200)
+    }
+
+  } catch (err) {
+    res.status(409).send({ message: err.message })
+  }
+
+}
+
+export const forgotPassword = async (req, res) => {
+ 
+  const email = req.params.email
+
+  try {
+    await connect(config)
+    const result = await query`SELECT Email FROM RvnuAccount WHERE Email=${email}`
+    const email_db =result.recordset[0].Email
+    const hash = result.recordset[0].Password
+
+    if (email === email_db && bcrypt.compareSync(password, hash)) {
+      res.json(true).status(200)
+    } else {
+      res.json(false).status(200)
+    }
+
+  } catch (err) {
+    res.status(409).send({ message: err.message })
+  }
+
+}
 
 export const createRvnuAccount = async (req, res) => {
 
@@ -17,10 +69,16 @@ export const createRvnuAccount = async (req, res) => {
   const tlproviderId = req.params.providerId
   const accountNum = req.params.accountNum
   const sortcode = req.params.sortCode
+
+  // HASH PASSWORD
+  // salt should be created ONE TIME upon sign up
+  const salt = bcrypt.genSaltSync(10);
+  const hash = bcrypt.hashSync(password, salt);
+
   
   try {
     await connect(config)
-    const result = await query`INSERT INTO RvnuAccount (AccountID, FirstName, LastName, MobileNumber, Email, Password, SortCode, AccountNumber, Tl_providerId, AccountCreated) VALUES (${accountId}, ${firstname}, ${lastname}, ${mobileNum}, ${email}, ${password}, ${sortcode}, ${accountNum}, ${tlproviderId}, CURRENT_TIMESTAMP)`
+    const result = await query`INSERT INTO RvnuAccount (AccountID, FirstName, LastName, MobileNumber, Email, Password, SortCode, AccountNumber, Tl_providerId, AccountCreated) VALUES (${accountId}, ${firstname}, ${lastname}, ${mobileNum}, ${email}, ${hash}, ${sortcode}, ${accountNum}, ${tlproviderId}, CURRENT_TIMESTAMP)`
     res.json("Successfully created RVNU Account").status(200)
   } catch (err) {
     res.status(409).send({ message: err.message })
