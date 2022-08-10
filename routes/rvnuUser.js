@@ -16,6 +16,6 @@ router.get('/getUserRvnuAccount/:num', getUserRvnuAccount)
 router.get('/getName/:num', getName)
 router.get('/userCodeUsed/:rvnuCodeId', getUserWhosCodeRvnuUsed )
 router.get('/updateAssets/:accountId/:paymentId/:rvnuCodeId', updateTotalAssets)
-router.post('/register/:firstname/:lastname/:mobile/:email/:password/:tlProviderId/:accountNum/:sortcode', createRvnuAccount)
+router.post('/register/:firstname/:lastname/:mobile/:email/:password/:providerId/:accountNum/:sortCode', createRvnuAccount)
 
 export default router

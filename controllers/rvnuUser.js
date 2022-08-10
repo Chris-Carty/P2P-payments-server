@@ -14,13 +14,13 @@ export const createRvnuAccount = async (req, res) => {
   const mobileNum = req.params.mobile
   const email = req.params.email
   const password = req.params.password
-  const tlproviderId = req.params.tlProviderId
+  const tlproviderId = req.params.providerId
   const accountNum = req.params.accountNum
-  const sortcode = req.params.sortcode
+  const sortcode = req.params.sortCode
   
   try {
     await connect(config)
-    const result = await query`INSERT INTO RvnuAccount (AccountID, FirstName, LastName, MobileNumber, Email, Password, SortCode, AccountNumber, Tl_providerId, AccountCreated) VALUES (${accountId}, ${firstname}, ${lastname}, ${mobileNum}, ${email}, ${password}, ${sortcode}, ${accountNum}, ${tlproviderId}, CURRENT_TIMESTAMP`
+    const result = await query`INSERT INTO RvnuAccount (AccountID, FirstName, LastName, MobileNumber, Email, Password, SortCode, AccountNumber, Tl_providerId, AccountCreated) VALUES (${accountId}, ${firstname}, ${lastname}, ${mobileNum}, ${email}, ${password}, ${sortcode}, ${accountNum}, ${tlproviderId}, CURRENT_TIMESTAMP)`
     res.json("Successfully created RVNU Account").status(200)
   } catch (err) {
     res.status(409).send({ message: err.message })
