@@ -181,6 +181,4 @@ app.post('/notifications', function(req, res) {
   );
   */
 
-const PORT = process.env.PORT ||  8080
-
-app.listen(PORT, () => console.log(`server running on PORT ${PORT}`))
+app.listen(process.env.PORT || 5000)
