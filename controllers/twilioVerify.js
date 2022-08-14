@@ -5,8 +5,8 @@ import connection from '../config/dbConfig.js'
 
 dotenv.config({ path: '../.env' }); // Load environment variables into process.env
 
-const accountSid = process.env.ACCOUNT_SID
-const authToken = process.env.AUTH_TOKEN
+const accountSid = process.env.TWILIO_ACCOUNT_SID
+const authToken = process.env.TWILIO_TOKEN
 const serviceID = process.env.SERVICE_ID
 
 const client = twilio(accountSid, authToken);
