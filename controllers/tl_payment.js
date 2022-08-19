@@ -44,6 +44,7 @@ export const initiatePayment = async (req, res) => {
   
   // Access Token
   const accessToken = req.params.accessToken
+  console.log(accessToken)
 
   /*
   // Required Merchant Information (Payee) 
