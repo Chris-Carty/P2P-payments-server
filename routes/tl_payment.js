@@ -8,7 +8,7 @@ import cors from 'cors'
 const router = express.Router()
 
 const corsOptions = {
-        origin: "http://localhost:3000"
+        origin: "https://thankful-moss-098c7a710.1.azurestaticapps.net"
 }
 
 router.post('/getAccessToken', getAccessToken)
