@@ -114,13 +114,12 @@ export const initiatePayment = async (req, res) => {
     }
   };
 
-  axios(request)
-  // 204 means success
-  .then(response => 
-    res.json('https://payment.truelayer-sandbox.com/payments#payment_id=' + response.data.id + '&resource_token=' + response.data.resource_token + '&return_uri=http://localhost:3000')
-    )
-  // 401 means either the access token is invalid, or the signature is invalid.
-  .catch(err => console.warn(`${err.response.status} ${JSON.stringify(err.response.data)}`));
+  
+  axios.request(request).then(response =>
+    res.json('https://payment.truelayer-sandbox.com/payments#payment_id=' + response.data.id + '&resource_token=' + response.data.resource_token + '&return_uri=https://thankful-moss-098c7a710.1.azurestaticapps.net')
+  ).catch(function (error) {
+    res.send({ message: error});
+  });
 
 }
 
