@@ -16,9 +16,7 @@ const { connect, query } = mssql
 const app = express()
 app.use(express.json())
 app.use(cors({
-  origin: "http://localhost:3000",
-  methods: ["GET","POST"],
-  allowedHeaders: "*",
+  origin:"https://thankful-moss-098c7a710.1.azurestaticapps.net"
 }))
 
 app.use('/verify', twilioVerify)
