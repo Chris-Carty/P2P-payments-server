@@ -15,9 +15,7 @@ const { connect, query } = mssql
 
 const app = express()
 app.use(express.json())
-app.use(cors({
-  origin:"https://thankful-moss-098c7a710.1.azurestaticapps.net"
-}))
+app.use(cors())
 
 app.use('/verify', twilioVerify)
 app.use('/payment', payment)
