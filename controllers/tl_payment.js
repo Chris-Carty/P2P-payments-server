@@ -36,7 +36,7 @@ export const getAccessToken = async (req, res) => {
 
 }
 
-// Initiate Payment by calling TrueLayer '/payments' endpoint
+// Initiate Payment by calling TrueLayer '/initiate' endpoint
 export const initiatePayment = async (req, res) => {
 
   // Set random idempotencyKey
