@@ -113,6 +113,14 @@ export const initiatePayment = async (req, res) => {
     }
   };
 
+  axios.request(request).then(response =>
+    res.json(response.data)
+  ).catch(function (error) {
+    res.send({ message: error});
+  });
+
+  /*
+
   axios(request)
   // 204 means success
   .then(response => 
@@ -120,6 +128,8 @@ export const initiatePayment = async (req, res) => {
     )
   // 401 means either the access token is invalid, or the signature is invalid.
   .catch(err => console.warn(`${err.response.status} ${JSON.stringify(err.response.data)}`));
+
+  */
 
 }
 

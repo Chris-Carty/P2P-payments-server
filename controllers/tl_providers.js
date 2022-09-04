@@ -12,7 +12,3 @@ export const getProviders = async (req, res) => {
   .catch(err => console.error(err));
 
 }
-
-  
-
-
