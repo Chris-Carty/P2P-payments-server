@@ -29,6 +29,7 @@ export const sendOtp = async (req, res) => {
 
 }
 
+
 // Verifies Otp entered by the user
 export const verifyOtp = async (req, res) => {
 
@@ -59,7 +60,7 @@ export const sendNewRvnuCode = async (req, res) => {
   const message = `Hey ${firstName}!\n\nHere's your RVNUcode: ${rvnuCode}\n\nShare and start earning!\n\nExpires: ${expiryDate}`
 
   client.messages
-      .create({body: message, from: '+12058467345', to: phoneNum})
+      .create({body: message, messagingServiceSid: 'MGfbd328355eee7d0358a4a2fcebd5d3e9', to: phoneNum})
       .then(message => console.log(message.sid));
 
 }
@@ -88,7 +89,7 @@ export const sendCommissionSms = async (req, res) => {
         const message = `Hey ${firstName}!\n\n${codeUsedBy} just used your RVNUcode\n\nYou've earned £${userCommissionEarned.toString()}!`
 
         client.messages
-            .create({body: message, from: '+12058467345', to: mobileNumber})
+            .create({body: message, messagingServiceSid: 'MGfbd328355eee7d0358a4a2fcebd5d3e9', to: mobileNumber})
             .then(message => console.log(message.sid));
 
 
