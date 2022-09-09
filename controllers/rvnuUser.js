@@ -1,7 +1,12 @@
+import dotenv from 'dotenv'
 import mssql from 'mssql'
 import config from '../config/dbConfig.js'
 import { randomUUID } from 'crypto'
 import bcrypt from 'bcryptjs'
+import jwt from 'jsonwebtoken'
+
+// Load environment variables into process.env
+dotenv.config({ path: '../.env' }); 
 
 const { connect, query } = mssql
 
@@ -20,7 +25,27 @@ export const login = async (req, res) => {
       const hash = result.recordset[0].Password
 
       if (email === email_db && bcrypt.compareSync(password, hash)) {
-        res.json(true).status(200)
+        // create JWTs
+        const accessToken = jwt.sign(
+          { "email" : email },
+          process.env.ACCESS_TOKEN_SECRET,
+          {expiresIn: '30s'}
+        )
+
+        const refreshToken = jwt.sign(
+          { "email" : email },
+          process.env.REFRESH_TOKEN_SECRET,
+          {expiresIn: '1d'}
+        )
+        // TODO..have differnt roles saved in DB
+        // Each number in array represents different role
+        const roles = [1, 2, 3]
+
+        // TODO save Refresh token in DB and send as cookie in res
+        // Valid for 1 day
+        // res.cookie('jwt', refreshToken, { httpOnly: true, maxAge: 24 * 60 * 60 * 1000});
+        
+        res.json({ roles, accessToken }).status(200)
       } else {
         res.json(false).status(200)
       }

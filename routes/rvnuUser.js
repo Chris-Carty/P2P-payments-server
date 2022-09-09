@@ -9,6 +9,7 @@ import { updateBankAccount,
          login,
          forgotPassword
         } from '../controllers/rvnuUser.js'
+//import verifyJWT from '../middleware/'
 
 const router = express.Router()
 

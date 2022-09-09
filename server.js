@@ -11,6 +11,13 @@ import user from './routes/rvnuUser.js'
 import providers from './routes/tl_providers.js'
 import * as tlSigning from 'truelayer-signing'
 
+/*
+// To generate random tokens
+import crypto from 'crypto';
+const tokenGenerator = crypto.randomBytes(64).toString('hex')
+console.log(tokenGenerator)
+*/
+
 const { connect, query } = mssql
 
 const app = express()
