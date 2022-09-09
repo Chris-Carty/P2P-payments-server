@@ -1,7 +1,10 @@
 //https://www.twilio.com/docs/
+import mssql from 'mssql'
+import config from '../config/dbConfig.js'
 import dotenv from 'dotenv'
 import twilio from 'twilio' 
-import connection from '../config/dbConfig.js'
+
+const { connect, query } = mssql
 
 dotenv.config({ path: '../.env' }); // Load environment variables into process.env
 
@@ -11,7 +14,7 @@ const serviceID = process.env.SERVICE_ID
 
 const client = twilio(accountSid, authToken);
 
-// Sends Otp to users mobile number
+// Sends OTP to users mobile number
 export const sendOtp = async (req, res) => {
 
   const phoneNum = req.params.phoneNumber
@@ -30,7 +33,7 @@ export const sendOtp = async (req, res) => {
 }
 
 
-// Verifies Otp entered by the user
+// Verifies OTP entered by the user
 export const verifyOtp = async (req, res) => {
 
   const phoneNum = req.params.phoneNumber
@@ -65,6 +68,7 @@ export const sendNewRvnuCode = async (req, res) => {
 
 }
 
+// Send commission text to user whose code has been used
 export const sendCommissionSms = async (req, res) => {
   // Gets the commission earned by user who's RVNU code was used
   const paymentId = req.params.paymentId
@@ -72,34 +76,27 @@ export const sendCommissionSms = async (req, res) => {
   const firstName = req.params.firstName
   const mobileNumber = req.params.mobileNumber
   const codeUsedBy = req.params.codeUsedBy
-
-  const query1 = "SELECT UserCommission FROM RvnuTransaction WHERE PaymentID ='"+ paymentId +"' AND RvnuCodeID ='"+ rvnuCodeId +"' LIMIT 1"
+  const merchantName = req.params.merchantName
 
   try {
-    connection.query(query1, (err, rows) => {
-      if(err) return res.status(409).send({ message: err.message })
 
-      const count = rows.length;
+    await connect(config)
+    const result = await query`SELECT UserCommission FROM RvnuTransaction WHERE PaymentID = ${paymentId} AND RvnuCodeID = ${rvnuCodeId}`
 
-      if (count) {
+    const userCommissionEarned = result.recordset[0].UserCommission
+    console.log(userCommissionEarned)
 
-        const userCommissionEarned = rows.map(i => i.UserCommission)[0];
-
-        // Send SMS to user notifying them how much they have earned
-        const message = `Hey ${firstName}!\n\n${codeUsedBy} just used your RVNUcode\n\nYou've earned £${userCommissionEarned.toString()}!`
-
-        client.messages
+    // Send SMS to user notifying them how much they have earned
+    const message = `Hey ${firstName}!\n\n${codeUsedBy} just used your RVNUcode at ${merchantName}\n\nYou've earned £${userCommissionEarned.toString()}!`
+  
+    client.messages
             .create({body: message, messagingServiceSid: 'MGfbd328355eee7d0358a4a2fcebd5d3e9', to: mobileNumber})
             .then(message => console.log(message.sid));
-
-
-      } else {
-        console.log('error: could not get user commission');
-      }
-
-    });
+    
   } catch (err) {
-      res.status(409).send({ message: err.message })
+
+    res.status(409).send({ message: err.message })
+    
   }
 
 }
