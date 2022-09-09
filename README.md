@@ -12,6 +12,6 @@ This server handles requests from the RVNU Checkout API and RVNU Dashboard.
 
 Tehcnologies:
 
-JavaScript
-Express
+JavaScript,
+Express,
 Node.JS
