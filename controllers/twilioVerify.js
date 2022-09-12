@@ -84,7 +84,6 @@ export const sendCommissionSms = async (req, res) => {
     const result = await query`SELECT UserCommission FROM RvnuTransaction WHERE PaymentID = ${paymentId} AND RvnuCodeID = ${rvnuCodeId}`
 
     const userCommissionEarned = result.recordset[0].UserCommission
-    console.log(userCommissionEarned)
 
     // Send SMS to user notifying them how much they have earned
     const message = `Hey ${firstName}!\n\n${codeUsedBy} just used your RVNUcode at ${merchantName}\n\nYou've earned £${userCommissionEarned.toString()}!`

@@ -32,6 +32,53 @@ export const getAccessToken = async (req, res) => {
 
 }
 
+export const InitiatePayment = async (req, res) => {
+
+  // Set random idempotencyKey
+  const idempotencyKey = randomUUID();
+
+  // Access Token
+  const accessToken = req.params.accessToken
+    
+  // Request body - for preselected bank (i.e if user already has RVNU account)
+  const body = '{"payment_method":{"provider_selection":{"remitter":{"account_identifier":{"type":"sort_code_account_number","sort_code":"101010","account_number":"12345681"},"account_holder_name":"Chris Carty"},"type":"preselected","provider_id":"mock-payments-gb-redirect","scheme_id":"faster_payments_service"},"beneficiary":{"account_identifier":{"type":"sort_code_account_number","sort_code":"123456","account_number":"12345678"},"type":"external_account","account_holder_name":"Merchant X","reference":"RVNU"},"type":"bank_transfer"},"user":{"name":"Chris","phone":"+447777777777","id":"c7f1de07-e0e9-4afe-9d35-6cf72b372cfb"},"amount_in_minor":100,"currency":"GBP"}'
+  
+  
+  const tlSignature = tlSigning.sign({
+      kid,
+      privateKeyPem,
+      method: "POST", // as we're sending a POST request
+      path: "/payments", // the path of our request
+      // All signed headers *must* be included unmodified in the request.
+      headers: { 
+      "Idempotency-Key": idempotencyKey,
+      "Content-Type": "application/json", 
+      },
+      body,
+  });
+    
+  const request = {
+      method: "POST",
+      url: "https://api.truelayer-sandbox.com/payments",
+      // Request body & any signed headers *must* exactly match what was used to generate the signature.
+      data: body,
+      headers: {
+      "Authorization": `Bearer ${accessToken}`,
+      "Idempotency-Key": idempotencyKey,
+      "Content-Type": "application/json",
+      "Tl-Signature": tlSignature,
+      }
+  };
+  
+  axios.request(request).then(response =>
+      res.json('https://payment.truelayer-sandbox.com/payments#payment_id=' + response.data.id + '&resource_token=' + response.data.resource_token + '&return_uri=http://localhost:3000')
+  ).catch(function (error) {
+      res.send({ message: error});
+  });
+    
+}
+
+
 // Store Transaction Information in Database
 export const storeTransaction = async (req, res) => {
 
