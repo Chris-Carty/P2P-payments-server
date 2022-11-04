@@ -1,6 +1,8 @@
 import dotenv from 'dotenv'
+import mysql from 'mysql'
 dotenv.config({ path: '../.env' }); // Load environment variables into process.env
 
+/*
 // AZURE connection credentials
 const config = {
   user: process.env.AZURE_USERNAME,
@@ -17,5 +19,24 @@ const config = {
     trustServerCertificate: false // change to true for local dev / self-signed certs
   }
 }
+*/
 
-export default config
+// DEVELOPMENT DATABASE
+const config = {
+  host     : 'localhost',
+  port     : '8889',
+  user     : 'root',
+  password : 'root',
+  database : 'RvnuDatabase'
+
+}
+
+const conn = mysql.createConnection(config);
+
+conn.connect((err) => {
+if (err) throw err;
+console.log('Connected to RvnuDatabase');
+});
+
+
+export default conn

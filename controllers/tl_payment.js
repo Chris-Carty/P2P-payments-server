@@ -2,6 +2,8 @@ import dotenv from 'dotenv'
 import axios from 'axios'
 import mssql from 'mssql'
 import config from '../config/dbConfig.js'
+import { randomUUID } from 'crypto'
+import * as tlSigning from 'truelayer-signing'
 
 const { connect, query } = mssql
 
@@ -9,6 +11,8 @@ dotenv.config({ path: '../.env' }); // Load environment variables into process.e
 
 const clientId = process.env.CLIENT_ID
 const clientSecret = process.env.CLIENT_SECRET
+const kid = "2d4fd39f-8248-4748-83d9-e32a8596881c"
+const privateKeyPem = "-----BEGIN EC PRIVATE KEY-----\nMIHcAgEBBEIBEi0IMxihNrPdhBN43HIIDKuSrPPN+MDlMoSNSJKqkHnp299QU6ut\nK+4fzFFlYgtbpaXBvb4ZSHa3HSNFdTER0SCgBwYFK4EEACOhgYkDgYYABAEWE0RX\np6orbkuQyEAkf8pRr/ShdozXW+gEzT2utbSLQh6Uhmvbam/6GTsxDuDZBmnDRHuK\n3Yhxt7xCzroJbGFkbAEL4CblSidu+1cbHOsTdHc4pJVL3/j0x46y5EJVjnmmxWk7\nYYDK9UBiVW+wmF6u9yc4diuLm/pZwL5OYRRMwIiXmw==\n-----END EC PRIVATE KEY-----"
 
 // Retrieve access token to enable payment initiation
 export const getAccessToken = async (req, res) => {
@@ -32,7 +36,7 @@ export const getAccessToken = async (req, res) => {
 
 }
 
-export const InitiatePayment = async (req, res) => {
+export const initiatePayment = async (req, res) => {
 
   // Set random idempotencyKey
   const idempotencyKey = randomUUID();

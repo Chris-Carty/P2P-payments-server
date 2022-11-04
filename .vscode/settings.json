@@ -1,8 +1,0 @@
-{
-    "appService.zipIgnorePattern": [
-        "node_modules{,/**}",
-        ".vscode{,/**}"
-    ],
-    "appService.defaultWebAppToDeploy": "/subscriptions/3b8f26ae-54fd-4b6e-be1f-903807a5ac76/microsoft.web/sites/subscriptions/3b8f26ae-54fd-4b6e-be1f-903807a5ac76/resourceGroups/RVNU/providers/Microsoft.Web/sites/rvnu-server",
-    "appService.deploySubpath": "."
-}

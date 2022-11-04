@@ -21,6 +21,7 @@ console.log(tokenGenerator)
 const { connect, query } = mssql
 
 const app = express()
+const port = process.env.PORT || 8080;
 app.use(express.json())
 app.use(cors())
 
@@ -188,4 +189,6 @@ app.post('/notifications', function(req, res) {
   );
   */
 
-app.listen(process.env.PORT || 8080)
+app.listen(port, () => {
+  console.log(`RVNU server listening on port ${port}`)
+})
