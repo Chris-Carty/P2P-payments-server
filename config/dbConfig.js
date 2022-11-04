@@ -1,33 +1,17 @@
 import dotenv from 'dotenv'
 import mysql from 'mysql'
-dotenv.config({ path: '../.env' }); // Load environment variables into process.env
 
-/*
-// AZURE connection credentials
-const config = {
-  user: process.env.AZURE_USERNAME,
-  password: process.env.AZURE_PASSWORD,
-  database: process.env.AZURE_DB_NAME,
-  server: process.env.AZURE_SERVER,
-  pool: {
-    max: 10,
-    min: 0,
-    idleTimeoutMillis: 3000
-  },
-  options: {
-    encrypt: true, // for azure
-    trustServerCertificate: false // change to true for local dev / self-signed certs
-  }
-}
-*/
+// Load environment variables into process.env
+dotenv.config({ path: '../.env' });
 
-// DEVELOPMENT DATABASE
+// DATABASE CONNECTION
 const config = {
-  host     : 'localhost',
-  port     : '8889',
-  user     : 'root',
-  password : 'root',
-  database : 'RvnuDatabase'
+  user : process.env.DB_USERNAME,
+  password : process.env.DB_PASSWORD,
+  host     : process.env.DB_HOST,
+  port     : process.env.DB_PORT,
+  database : process.env.DB_NAME,
+  sslmode  : 'REQUIRED'
 
 }
 
