@@ -8,9 +8,8 @@ import { getAccessToken,
 const router = express.Router()
 
 router.post('/getAccessToken', getAccessToken)
-router.post('/initiate/:accessToken', initiatePayment)
-router.post('/storeTransaction/:transactionID/:merchantID/:accountID/:rvnuCodeID/:currency/:amount', storeTransaction)
-router.get('/status/:paymentId', getPaymentStatus)
-
+router.post('/initiate/:accessToken/:amount/:currency/:payerMobile/:payerName/:payerAccountID/:reference', initiatePayment)
+router.post('/storeTransaction/:transactionID/:merchantID/:payerAccountID/:recommenderID/:currency/:amount/:reference', storeTransaction)
+router.get('/status/:accessToken/:paymentId', getPaymentStatus)
 
 export default router

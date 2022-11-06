@@ -37,7 +37,7 @@ export const sendOtp = async (req, res) => {
 export const verifyOtp = async (req, res) => {
 
   const phoneNum = req.params.phoneNumber
-  const otp = req.params.otp
+  const otp = req.params.inputOtp
 
   client.verify.services(serviceID)
   .verificationChecks
@@ -55,12 +55,11 @@ export const verifyOtp = async (req, res) => {
 // Send new RVNU code to user via SMS.
 export const sendNewRvnuCode = async (req, res) => {
 
-  const rvnuCode = req.params.userRvnuCode
   const firstName = req.params.firstName
   const phoneNum = req.params.phoneNum
   const expiryDate = req.params.expiryDate
 
-  const message = `Hey ${firstName}!\n\nHere's your RVNUcode: ${rvnuCode}\n\nShare and start earning!\n\nExpires: ${expiryDate}`
+  const message = `Hey ${firstName}!\n\nYour RVNU Username @${username} has been revalidated for another 14 days.\n\nShare and start earning!\n\nExpires: ${expiryDate}`
 
   client.messages
       .create({body: message, messagingServiceSid: 'MGfbd328355eee7d0358a4a2fcebd5d3e9', to: phoneNum})

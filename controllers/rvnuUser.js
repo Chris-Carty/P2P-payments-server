@@ -7,8 +7,6 @@ import jwt from 'jsonwebtoken'
 // Load environment variables into process.env
 dotenv.config({ path: '../.env' }); 
 
-
-
 export const login = async (req, res) => {
  
   const email = req.params.email
@@ -58,27 +56,6 @@ export const login = async (req, res) => {
 
 }
 
-export const forgotPassword = async (req, res) => {
- 
-  const email = req.params.email
-
-  try {
-    await connect(config)
-    const result = await query`SELECT Email FROM RvnuAccount WHERE Email=${email}`
-    const email_db =result.recordset[0].Email
-    const hash = result.recordset[0].Password
-
-    if (email === email_db && bcrypt.compareSync(password, hash)) {
-      res.json(true).status(200)
-    } else {
-      res.json(false).status(200)
-    }
-
-  } catch (err) {
-    res.status(409).send({ message: err.message })
-  }
-
-}
 
 export const createRvnuAccount = async (req, res) => {
 
@@ -133,7 +110,7 @@ export const getUserRvnuAccount = async (req, res) => {
   // Gets users preferred payment account
   const mobileNumber = req.params.num
   
-  const query = `SELECT AccountID, FirstName, LastName, MobileNumber, SortCode, AccountNumber, Tl_providerId, RvnuCodeID FROM RvnuAccount WHERE MobileNumber=${mobileNumber}`
+  const query = `SELECT AccountID, FirstName, LastName, MobileNumber, Username, SortCode, AccountNumber, Tl_providerId, RvnuCodeID FROM RvnuAccount WHERE MobileNumber=${mobileNumber}`
 
   try {
     conn.query(query, (err, data) => {
@@ -146,11 +123,49 @@ export const getUserRvnuAccount = async (req, res) => {
 
 }
 
+
+// Check if RVNU username entered has valid username associated with it
+export const getRecommenderRvnuCode = async (req, res) => {
+  // Gets users preferred payment account
+  const username = req.params.username
+  
+  const query = `SELECT AccountID, RvnuCodeID FROM RvnuAccount WHERE Username='${username}'`
+
+  try {
+    conn.query(query, (err, data) => {
+      if(err) return res.status(409).send({ message: err.message })
+      res.status(200).json({data});
+    });
+  } catch (err) {
+      res.status(409).send({ message: err.message })
+  }
+
+}
+
+// Check if RVNU username entered has valid username associated with it
+export const getRecommenderAccount = async (req, res) => {
+  // Gets users preferred payment account
+  const accountID = req.params.username
+  
+  const query = `SELECT FirstName, LastName, MobileNumber, Username, Email FROM RvnuAccount WHERE AccountID='${accountID}'`
+
+  try {
+    conn.query(query, (err, data) => {
+      if(err) return res.status(409).send({ message: err.message })
+      res.status(200).json({data});
+    });
+  } catch (err) {
+      res.status(409).send({ message: err.message })
+  }
+
+}
+
+
 export const getUserBankAccount = async (req, res) => {
   // Gets users preferred payment account
   const userId = req.params.userId
   
-  const query = "SELECT AccountNumber, Tl_providerId FROM RvnuAccount WHERE AccountID ='"+ userId +"'"
+  const query = `SELECT AccountID, FirstName, MobileNumber, Email FROM RvnuAccount WHERE RvnuCodeID =${rvnuCodeId}`
 
   try {
     conn.query(query, (err, data) => {
@@ -182,23 +197,6 @@ export const updateBankAccount = async (req, res) => {
   }
 }
 
-export const getUserWhosCodeRvnuUsed = async (req, res) => {
-  // Get RVNU account info of the user whos RVNUcode is used to checkout
-  // This will be used to send SMS and email notifications
-  const rvnuCodeId = req.params.rvnuCodeId
-
-  const query = `SELECT AccountID, FirstName, MobileNumber, Email FROM RvnuAccount WHERE RvnuCodeID =${rvnuCodeId}`
-
-  try {
-    conn.query(query, (err, data) => {
-      if(err) return res.status(409).send({ message: err.message })
-      res.status(200).json({data});
-    });
-  } catch (err) {
-      res.status(409).send({ message: err.message })
-  }
-}
-
 
 export const updateTotalAssets = async (req, res) => {
 
@@ -206,16 +204,15 @@ export const updateTotalAssets = async (req, res) => {
   // Updates a users TotalAssetsOwed && TotalAssets
   const accountId = req.params.accountId
   const paymentId = req.params.paymentId
-  const rvnuCodeId = req.params.rvnuCodeId
 
   try {
     await connect(config)
-    const result = await query`SELECT UserCommission FROM RvnuTransaction WHERE PaymentID=${paymentId} AND RvnuCodeID=${rvnuCodeId}`
+    const result = await query`SELECT UserCommission FROM RvnuTransaction WHERE PaymentID=${paymentId} AND RecommenderID=${accountId}`
     const commission = result.recordset[0].UserCommission
     
     try {
       await connect(config)
-      const result = await query`UPDATE RvnuAccount SET TotalAssetsOwed = TotalAssetsOwed + ${commission}, TotalAssets = TotalAssets + ${commission} WHERE AccountID = ${accountId} AND RvnuCodeID=${rvnuCodeId}`
+      const result = await query`UPDATE RvnuAccount SET TotalAssetsOwed = TotalAssetsOwed + ${commission}, TotalAssets = TotalAssets + ${commission} WHERE AccountID = ${accountId}`
     } catch (err) {
         res.status(409).send({ message: err.message })
     }
@@ -225,4 +222,3 @@ export const updateTotalAssets = async (req, res) => {
   }
 
 }
-

@@ -3,11 +3,11 @@ import { updateBankAccount,
          getUserBankAccount, 
          getUserRvnuAccount, 
          getName, 
-         getUserWhosCodeRvnuUsed ,
          updateTotalAssets,
          createRvnuAccount,
          login,
-         forgotPassword
+         getRecommenderRvnuCode,
+         getRecommenderAccount
         } from '../controllers/rvnuUser.js'
 //import verifyJWT from '../middleware/'
 
@@ -17,10 +17,12 @@ router.post('/updateBankAccount/:userId/:providerId/:sortCode/:accountNum', upda
 router.get('/getUserBankAccount/:userId', getUserBankAccount)
 router.get('/getUserRvnuAccount/:num', getUserRvnuAccount)
 router.get('/getName/:num', getName)
-router.get('/userCodeUsed/:rvnuCodeId', getUserWhosCodeRvnuUsed )
-router.get('/updateAssets/:accountId/:paymentId/:rvnuCodeId', updateTotalAssets)
+router.get('/updateAssets/:accountId/:paymentId', updateTotalAssets)
 router.post('/register/:firstname/:lastname/:mobile/:email/:password/:providerId/:accountNum/:sortCode', createRvnuAccount)
 router.get('/login/:email/:password/', login)
-router.get('/forgotPassword/:email/', forgotPassword)
+router.get('/recommender/:username', getRecommenderRvnuCode)
+router.get('/recommender/account/:accountId', getRecommenderAccount)
+
+
 
 export default router
