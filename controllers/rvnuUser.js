@@ -1,6 +1,6 @@
 import dotenv from 'dotenv'
 import conn from '../config/dbConfig.js'
-import { randomUUID } from 'crypto'
+import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 
@@ -60,7 +60,7 @@ export const login = async (req, res) => {
 export const createRvnuAccount = async (req, res) => {
 
   // Generate unique Account ID 
-  const accountId = randomUUID();
+  const accountId = uuidv4();
  
   const firstname = req.params.firstname
   const lastname = req.params.lastname
@@ -123,29 +123,10 @@ export const getUserRvnuAccount = async (req, res) => {
 
 }
 
-
-// Check if RVNU username entered has valid username associated with it
-export const getRecommenderRvnuCode = async (req, res) => {
-  // Gets users preferred payment account
-  const username = req.params.username
-  
-  const query = `SELECT AccountID, RvnuCodeID FROM RvnuAccount WHERE Username='${username}'`
-
-  try {
-    conn.query(query, (err, data) => {
-      if(err) return res.status(409).send({ message: err.message })
-      res.status(200).json({data});
-    });
-  } catch (err) {
-      res.status(409).send({ message: err.message })
-  }
-
-}
-
 // Check if RVNU username entered has valid username associated with it
 export const getRecommenderAccount = async (req, res) => {
   // Gets users preferred payment account
-  const accountID = req.params.username
+  const accountID = req.params.accountId
   
   const query = `SELECT FirstName, LastName, MobileNumber, Username, Email FROM RvnuAccount WHERE AccountID='${accountID}'`
 
@@ -197,7 +178,6 @@ export const updateBankAccount = async (req, res) => {
   }
 }
 
-
 export const updateTotalAssets = async (req, res) => {
 
   // Get commission earned from the transaction 
@@ -205,18 +185,50 @@ export const updateTotalAssets = async (req, res) => {
   const accountId = req.params.accountId
   const paymentId = req.params.paymentId
 
-  try {
-    await connect(config)
-    const result = await query`SELECT UserCommission FROM RvnuTransaction WHERE PaymentID=${paymentId} AND RecommenderID=${accountId}`
-    const commission = result.recordset[0].UserCommission
-    
-    try {
-      await connect(config)
-      const result = await query`UPDATE RvnuAccount SET TotalAssetsOwed = TotalAssetsOwed + ${commission}, TotalAssets = TotalAssets + ${commission} WHERE AccountID = ${accountId}`
-    } catch (err) {
-        res.status(409).send({ message: err.message })
-    }
 
+  const query = `SELECT RecommenderCommission, RecommenderAssetsUpdated FROM RvnuTransaction WHERE PaymentID='${paymentId}' AND RecommenderID='${accountId}'`
+
+  try {
+
+    conn.query(query, (err, data) => {
+      if(err) return res.status(409).send({ message: err.message })
+
+      Object.keys(data).forEach(function(key) {
+        var row = data[key];
+        const commission = row.RecommenderCommission
+        const assetsPrevUpdated = row.RecommenderAssetsUpdated
+
+        // Safety measure to ensure commission isn't paid out more than once for the same transaction.
+        if (assetsPrevUpdated === 0) {
+
+          const query = `UPDATE RvnuAccount SET TotalAssetsOwed = TotalAssetsOwed + '${commission}', TotalAssets = TotalAssets + '${commission}' WHERE AccountID ='${accountId}'`
+
+
+          try {
+            conn.query(query, (err, data) => {
+              if(err) return res.status(409).send({ message: err.message })
+
+              const query = `UPDATE RvnuTransaction SET RecommenderAssetsUpdated = '${1}' WHERE PaymentID ='${paymentId}'`
+
+              try {
+                conn.query(query, (err, data) => {
+                  if(err) return res.status(409).send({ message: err.message })
+                  res.status(200).json({data});
+          
+              });
+              } catch (err) {
+                  res.status(409).send({ message: err.message })
+              }
+      
+          });
+          } catch (err) {
+              res.status(409).send({ message: err.message })
+          }
+
+        }
+
+    });
+  });
   } catch (err) {
       res.status(409).send({ message: err.message })
   }

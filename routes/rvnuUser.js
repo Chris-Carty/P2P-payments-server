@@ -6,7 +6,6 @@ import { updateBankAccount,
          updateTotalAssets,
          createRvnuAccount,
          login,
-         getRecommenderRvnuCode,
          getRecommenderAccount
         } from '../controllers/rvnuUser.js'
 //import verifyJWT from '../middleware/'
@@ -20,7 +19,6 @@ router.get('/getName/:num', getName)
 router.get('/updateAssets/:accountId/:paymentId', updateTotalAssets)
 router.post('/register/:firstname/:lastname/:mobile/:email/:password/:providerId/:accountNum/:sortCode', createRvnuAccount)
 router.get('/login/:email/:password/', login)
-router.get('/recommender/:username', getRecommenderRvnuCode)
 router.get('/recommender/account/:accountId', getRecommenderAccount)
 
 

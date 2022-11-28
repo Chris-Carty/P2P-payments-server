@@ -60,12 +60,14 @@ CREATE TABLE Merchant
  Password varchar(150) NOT NULL,
  MinimumSpend decimal(10,2) NOT NULL,
  CommissionPercentage decimal(10,2) NOT NULL,
+ iBan varchar(34) NOT NULL,
  SortCode varchar(6) NOT NULL,
  AccountNumber varchar(8) NOT NULL,
  Tl_providerId varchar(50) NOT NULL,
  AccountCreated datetime NOT NULL,
  CONSTRAINT AK_MerchantName UNIQUE(MerchantName), 
- CONSTRAINT AK_MerchantEmail UNIQUE(Email)       
+ CONSTRAINT AK_MerchantEmail UNIQUE(Email),
+ CONSTRAINT AK_iBan UNIQUE(iBan)          
 );
 
 INSERT INTO Merchant
@@ -82,9 +84,10 @@ CREATE TABLE RvnuTransaction
  DateTime datetime NOT NULL,
  Currency varchar(3) NOT NULL,
  TotalAmount decimal(10,2) NOT NULL, 
- RecommenderID varchar(36) NOT NULL, 
- RvnuFee decimal(10,2) NOT NULL, 
- RecommenderCommission decimal(10,2) NOT NULL, 
+ RvnuFee decimal(10,2) NOT NULL,
+ RecommenderID varchar(36) NOT NULL,  
+ RecommenderCommission decimal(10,2) NOT NULL,
+ RecommenderAssetsUpdated tinyint(1),
  Reference varchar(36) NOT NULL,
  Status varchar(20),
  EventID varchar(36),
@@ -92,10 +95,27 @@ CREATE TABLE RvnuTransaction
  Webhook_Description varchar(20)
 );
 
-CREATE TABLE RvnuAccountPayout
+CREATE TABLE RvnuBusinessAccountPayout
 (
- PayoutID varchar(36) NOT NULL PRIMARY KEY, -- primary key column
+ RvnuPayoutID varchar(36) NOT NULL PRIMARY KEY, -- primary key column
  AccountID varchar(36) NOT NULL,
  TotalAmount decimal(10,2) NOT NULL, 
  DateTime datetime NOT NULL
 );
+
+CREATE TABLE RvnuMerchantPayout
+(
+ MerchantPayoutID varchar(36) NOT NULL PRIMARY KEY, -- primary key column
+ AccountID varchar(36) NOT NULL,
+ TotalAmount decimal(10,2) NOT NULL, 
+ DateTime datetime NOT NULL
+);
+
+CREATE TABLE CommissionPayout
+(
+ CommissionPayoutID varchar(36) NOT NULL PRIMARY KEY, -- primary key column
+ AccountID varchar(36) NOT NULL,
+ TotalAmount decimal(10,2) NOT NULL, 
+ DateTime datetime NOT NULL
+);
+

@@ -1,7 +1,7 @@
 import dotenv from 'dotenv'
 import axios from 'axios'
 import conn from '../config/dbConfig.js'
-import { randomUUID } from 'crypto'
+import { v4 as uuidv4 } from 'uuid';
 import * as tlSigning from 'truelayer-signing'
 
 dotenv.config({ path: '../.env' }); // Load environment variables into process.env
@@ -11,7 +11,7 @@ const clientId = process.env.CLIENT_ID
 const clientSecret = process.env.CLIENT_SECRET
 const kid = process.env.CERTIFICATE_ID
 const privateKeyPem = process.env.PRIVATE_KEY
-
+const rvnuMerchantAccountId = process.env.RVNU_MERCHANT_ACCOUNT_ID
 
 // Retrieve access token to enable payment initiation
 export const getAccessToken = async (req, res) => {
@@ -41,19 +41,35 @@ export const initiatePayment = async (req, res) => {
   const amount = req.params.amount * 100
   const amountRounded = Math.round((amount + Number.EPSILON) * 100) / 100
   const currency = req.params.currency
+  const reference = req.params.reference
+  const MerchantName = req.params.merchantName
+
+  // Payer Information
   const payerPhoneNumber = req.params.payerMobile
   const payerName = req.params.payerName
   const payerId = req.params.payerAccountID
-  const reference = req.params.reference
+
+  // TO DO - request from DB and unencrypt
+  //const payerSortCode = req.params.sortCode
+  //const payerAccountNumber = req.params.AccountNumber
 
   // Set random idempotencyKey
-  const idempotencyKey = randomUUID();
+  const idempotencyKey = uuidv4();
 
   // Access Token
   const accessToken = req.params.accessToken
     
-  // PAYMENT TO RVNU MERCHANT ACCOUNT - USER SELECT BANK
-  const body = '{"payment_method":{"type":"bank_transfer","provider_selection":{"type":"user_selected","scheme_selection":{"type":"instant_only","allow_remitter_fee":false}},"beneficiary":{"type":"merchant_account","merchant_account_id":"73bbdbf2-4848-4a03-8166-adacdf20490b", "reference":"' + reference + '"}},"user":{"id":"' + payerId + '","name":"' + payerName + '","phone":"' + payerPhoneNumber + '"},"amount_in_minor":' + amountRounded + ',"currency":"' + currency + '"}'
+  // SOURCE ACCOUNT PRESELECTED ROUTE
+
+  const body = '{"payment_method":{"type":"bank_transfer","provider_selection":{"type":"preselected","scheme_selection":{"type":"instant_only","allow_remitter_fee":false}, "remitter": {"account_identifier": {"type": "sort_code_account_number","sort_code": "101010", "account_number": "12345681"},"account_holder_name": "Chris Carty"}, "provider_id": "mock-payments-gb-redirect","scheme_id": "faster_payments_service"},"beneficiary":{"type":"merchant_account","merchant_account_id":"' + rvnuMerchantAccountId + '", "account_holder_name":"' + MerchantName + '", "reference":"' + reference + '"}},"user":{"id":"' + payerId + '","name":"' + payerName + '","phone":"' + payerPhoneNumber + '"},"amount_in_minor":' + amountRounded + ',"currency":"' + currency + '"}'
+
+  /*
+
+  // BANK SLECTION ROUTE
+
+  const body = '{"payment_method":{"type":"bank_transfer","provider_selection":{"type":"user_selected","scheme_selection":{"type":"instant_only","allow_remitter_fee":false}},"beneficiary":{"type":"merchant_account","merchant_account_id":"73bbdbf2-4848-4a03-8166-adacdf20490b", "account_holder_name":"' + MerchantName + '", "reference":"' + reference + '"}},"user":{"id":"' + payerId + '","name":"' + payerName + '","phone":"' + payerPhoneNumber + '"},"amount_in_minor":' + amountRounded + ',"currency":"' + currency + '"}'
+
+  */
   
   
   const tlSignature = tlSigning.sign({
@@ -83,10 +99,10 @@ export const initiatePayment = async (req, res) => {
   };
   
   axios.request(request).then(response =>
-     res.json('https://payment.truelayer-sandbox.com/payments#payment_id=' + response.data.id + '&resource_token=' + response.data.resource_token + '&return_uri=http://localhost:3000') 
+     res.json('https://payment.truelayer-sandbox.com/payments#payment_id=' + response.data.id + '&resource_token=' + response.data.resource_token + '&return_uri=http://localhost:3000&c_primary=262626&c_secondary=000000&c_tertiary=000000') 
   ).catch(function (error) {
     res.send({ message: error});
-    //console.log(error.response.data)
+    console.log(error.response.data)
   });
     
 }
@@ -103,6 +119,7 @@ export const storeTransaction = async (req, res) => {
     const currency = req.params.currency
     const amount = req.params.amount
     const reference = req.params.reference
+    const assetsUpdated = 0
     const rvnuServiceFee = (amount * 0.007)
     const rvnuFeeRounded = Math.round((rvnuServiceFee + Number.EPSILON) * 100) / 100
 
@@ -125,7 +142,7 @@ export const storeTransaction = async (req, res) => {
 
       
 
-          const query = `INSERT INTO RvnuTransaction (PaymentID, MerchantID, AccountID, DateTime, Currency, TotalAmount, RecommenderID, RvnuFee, RecommenderCommission, Reference) VALUES ('${paymentID}', '${merchantID}', '${accountID}', CURRENT_TIMESTAMP, '${currency}', '${amount}', '${recommenderID}', '${rvnuFeeRounded}', '${recommenderCommissionRounded}', '${reference}')`
+          const query = `INSERT INTO RvnuTransaction (PaymentID, MerchantID, AccountID, DateTime, Currency, TotalAmount, RvnuFee, RecommenderID, RecommenderCommission, RecommenderAssetsUpdated, Reference) VALUES ('${paymentID}', '${merchantID}', '${accountID}', CURRENT_TIMESTAMP, '${currency}', '${amount}','${rvnuFeeRounded}', '${recommenderID}', '${recommenderCommissionRounded}', '${assetsUpdated}','${reference}')`
 
 
           try {
@@ -136,6 +153,7 @@ export const storeTransaction = async (req, res) => {
           });
           } catch (err) {
               res.status(409).send({ message: err.message })
+              console.log(error.response.data)
           }
 
       });
