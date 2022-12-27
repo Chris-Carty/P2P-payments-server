@@ -8,6 +8,8 @@ import rvnu from './routes/rvnuCode.js'
 import user from './routes/rvnuUser.js'
 import providers from './routes/tl_providers.js'
 import webhooks from './routes/webhooks.js'
+import tl_webhooks from './routes/tl_webhooks.js'
+import session from './routes/rvnuSession.js'
 
 const app = express()
 const port = process.env.PORT || 8080;
@@ -21,6 +23,8 @@ app.use('/rvnu', rvnu)
 app.use('/providers', providers)
 app.use('/user', user)
 app.use('/event', webhooks)
+app.use('/notifications', tl_webhooks)
+app.use('/session', session)
 
 
 app.get('/', (req, res) => {

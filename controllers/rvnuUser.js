@@ -1,98 +1,47 @@
 import dotenv from 'dotenv'
 import conn from '../config/dbConfig.js'
 import { v4 as uuidv4 } from 'uuid';
-import bcrypt from 'bcryptjs'
-import jwt from 'jsonwebtoken'
 
 // Load environment variables into process.env
 dotenv.config({ path: '../.env' }); 
 
-export const login = async (req, res) => {
- 
-  const email = req.params.email
-  const password = req.params.password
-
-  try {
-    await connect(config)
-    const result = await query`SELECT Email, Password FROM RvnuAccount WHERE Email=${email}`
- 
-    if (result.recordset.length === 1 ) {
-
-      const email_db =result.recordset[0].Email
-      const hash = result.recordset[0].Password
-
-      if (email === email_db && bcrypt.compareSync(password, hash)) {
-        // create JWTs
-        const accessToken = jwt.sign(
-          { "email" : email },
-          process.env.ACCESS_TOKEN_SECRET,
-          {expiresIn: '30s'}
-        )
-
-        const refreshToken = jwt.sign(
-          { "email" : email },
-          process.env.REFRESH_TOKEN_SECRET,
-          {expiresIn: '1d'}
-        )
-        // TODO..have differnt roles saved in DB
-        // Each number in array represents different role
-        const roles = [1, 2, 3]
-
-        // TODO save Refresh token in DB and send as cookie in res
-        // Valid for 1 day
-        // res.cookie('jwt', refreshToken, { httpOnly: true, maxAge: 24 * 60 * 60 * 1000});
-        
-        res.json({ roles, accessToken }).status(200)
-      } else {
-        res.json(false).status(200)
-      }
-    } else {
-      res.json(false).status(200)
-    }
-
-  } catch (err) {
-    res.status(409).send({ message: err.message })
-  }
-
-}
-
-
-export const createRvnuAccount = async (req, res) => {
+export const createAccount = async (req, res) => {
 
   // Generate unique Account ID 
   const accountId = uuidv4();
- 
+  // Account Info
   const firstname = req.params.firstname
   const lastname = req.params.lastname
-  const mobileNum = req.params.mobile
-  const email = req.params.email
-  const password = req.params.password
-  const tlproviderId = req.params.providerId
+  const username = req.params.username
+  const mobile = req.params.mobile
+  const dob = req.params.dob
   const accountNum = req.params.accountNum
-  const sortcode = req.params.sortCode
+  const sortCode = req.params.sortCode
+  const providerId = req.params.providerId
 
-  // HASH PASSWORD
-  // salt should be created ONE TIME upon sign up
-  const salt = bcrypt.genSaltSync(10);
-  const hash = bcrypt.hashSync(password, salt);
+  const query = `INSERT INTO RvnuAccount (AccountID, FirstName, LastName, DoB, MobileNumber, Username, SortCode, AccountNumber, Tl_providerId, AccountCreated) VALUES ( '${accountId}', '${firstname}', '${lastname}', '${dob}', '${mobile}', '${username}', '${sortCode}', '${accountNum}', '${providerId}', CURRENT_TIMESTAMP)`
 
-  
   try {
-    await connect(config)
-    const result = await query`INSERT INTO RvnuAccount (AccountID, FirstName, LastName, MobileNumber, Email, Password, SortCode, AccountNumber, Tl_providerId, AccountCreated) VALUES (${accountId}, ${firstname}, ${lastname}, ${mobileNum}, ${email}, ${hash}, ${sortcode}, ${accountNum}, ${tlproviderId}, CURRENT_TIMESTAMP)`
-    res.json("Successfully created RVNU Account").status(200)
+    conn.query(query, (err, data) => {
+      if(err) return res.status(409).send({ message: err.message })
+      res.status(200).json({data});
+    });
   } catch (err) {
-    res.status(409).send({ message: err.message })
+      res.status(409).send({ message: err.message })
   }
-
 }
 
+export const generateAccountId = async (req, res) => {
 
-export const getName = async (req, res) => {
-  // Gets users first name
-  const mobileNumber = req.params.num
-  
-  const query = `SELECT FirstName FROM RvnuAccount WHERE MobileNumber=${mobileNumber}`
+  // Generate unique Account ID 
+  const accountId = uuidv4();
+  // Account Info
+  const payerName = req.params.payerName
+  const firstname = payerName.split(' ')[0]
+  const lastname = payerName.split(' ')[1]
+  const mobile = req.params.mobile
+
+  const query = `INSERT INTO RvnuAccount (AccountID, FirstName, LastName, MobileNumber, AccountCreated) VALUES ( '${accountId}', '${firstname}', '${lastname}', '${mobile}', CURRENT_TIMESTAMP)`
 
   try {
     conn.query(query, (err, data) => {
@@ -106,11 +55,29 @@ export const getName = async (req, res) => {
 }
 
 
-export const getUserRvnuAccount = async (req, res) => {
+export const getAccountId = async (req, res) => {
+
+  const mobileNumber = req.params.num
+  
+  const query = `SELECT AccountID FROM RvnuAccount WHERE MobileNumber=${mobileNumber}`
+
+  try {
+    conn.query(query, (err, data) => {
+      if(err) return res.status(409).send({ message: err.message })
+      res.status(200).json({data});
+    });
+  } catch (err) {
+      res.status(409).send({ message: err.message })
+  }
+
+}
+
+
+export const getRvnuAccount = async (req, res) => {
   // Gets users preferred payment account
   const mobileNumber = req.params.num
   
-  const query = `SELECT AccountID, FirstName, LastName, MobileNumber, Username, SortCode, AccountNumber, Tl_providerId, RvnuCodeID FROM RvnuAccount WHERE MobileNumber=${mobileNumber}`
+  const query = `SELECT AccountID, FirstName, LastName, MobileNumber, Username, Tl_providerId, RvnuCodeID FROM RvnuAccount WHERE MobileNumber=${mobileNumber}`
 
   try {
     conn.query(query, (err, data) => {
@@ -134,6 +101,24 @@ export const getRecommenderAccount = async (req, res) => {
     conn.query(query, (err, data) => {
       if(err) return res.status(409).send({ message: err.message })
       res.status(200).json({data});
+    });
+  } catch (err) {
+      res.status(409).send({ message: err.message })
+  }
+
+}
+
+// Check if RVNU username exists when signing up
+export const getUsername = async (req, res) => {
+
+  const username = req.params.username
+  
+  const query = `SELECT 1 FROM RvnuAccount WHERE Username='${username}'`
+
+  try {
+    conn.query(query, (err, data) => {
+      if(err) return res.status(409).send({ message: err.message })
+          res.status(200).json({data});
     });
   } catch (err) {
       res.status(409).send({ message: err.message })

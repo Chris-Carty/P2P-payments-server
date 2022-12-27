@@ -1,11 +1,12 @@
 import express from 'express'
 import { updateBankAccount,
          getUserBankAccount, 
-         getUserRvnuAccount, 
-         getName, 
+         getRvnuAccount, 
+         getAccountId,
+         getUsername,
+         generateAccountId,
          updateTotalAssets,
-         createRvnuAccount,
-         login,
+         createAccount,
          getRecommenderAccount
         } from '../controllers/rvnuUser.js'
 //import verifyJWT from '../middleware/'
@@ -14,12 +15,13 @@ const router = express.Router()
 
 router.post('/updateBankAccount/:userId/:providerId/:sortCode/:accountNum', updateBankAccount)
 router.get('/getUserBankAccount/:userId', getUserBankAccount)
-router.get('/getUserRvnuAccount/:num', getUserRvnuAccount)
-router.get('/getName/:num', getName)
+router.get('/getRvnuAccount/:num', getRvnuAccount)
+router.get('/getAccountId/:num', getAccountId)
 router.get('/updateAssets/:accountId/:paymentId', updateTotalAssets)
-router.post('/register/:firstname/:lastname/:mobile/:email/:password/:providerId/:accountNum/:sortCode', createRvnuAccount)
-router.get('/login/:email/:password/', login)
+router.post('/createAccount/:firstname/:lastname/:username/:mobile/:dob/:accountNum/:sortCode/:providerId', createAccount)
+router.post('/generateAccountId/:payerName/:mobile', generateAccountId)
 router.get('/recommender/account/:accountId', getRecommenderAccount)
+router.get('/username/:username', getUsername)
 
 
 
