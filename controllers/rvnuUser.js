@@ -35,18 +35,29 @@ export const generateAccountId = async (req, res) => {
 
   // Generate unique Account ID 
   const accountId = uuidv4();
-  // Account Info
-  const payerName = req.params.payerName
-  const firstname = payerName.split(' ')[0]
-  const lastname = payerName.split(' ')[1]
   const mobile = req.params.mobile
+  const sessionId = req.params.sessionId
 
-  const query = `INSERT INTO RvnuAccount (AccountID, FirstName, LastName, MobileNumber, AccountCreated) VALUES ( '${accountId}', '${firstname}', '${lastname}', '${mobile}', CURRENT_TIMESTAMP)`
+  // Create new account in RVNU flow
+  const query = `INSERT INTO RvnuAccount (AccountID, MobileNumber, AccountCreated) VALUES ('${accountId}', '${mobile}', CURRENT_TIMESTAMP)`
 
   try {
     conn.query(query, (err, data) => {
       if(err) return res.status(409).send({ message: err.message })
-      res.status(200).json({data});
+
+      if (data.affectedRows === 1) {
+
+        const query = `UPDATE RvnuSession SET AccountID='${accountId}' WHERE SessionID ='${sessionId}'`
+
+        try {
+          conn.query(query, (err, data) => {
+            if(err) return res.status(409).send({ message: err.message })
+            res.status(200).json({data});
+          });
+        } catch (err) {
+            res.status(409).send({ message: err.message })
+        }
+      }
     });
   } catch (err) {
       res.status(409).send({ message: err.message })
@@ -64,33 +75,20 @@ export const getAccountId = async (req, res) => {
   try {
     conn.query(query, (err, data) => {
       if(err) return res.status(409).send({ message: err.message })
-      res.status(200).json({data});
+
+      if (data.length === 0){
+        res.status(200).json('RVNU Account does not exist');
+      } else if (data.length === 1) {
+        res.status(200).json('RVNU Account exists');
+      }
+
     });
   } catch (err) {
       res.status(409).send({ message: err.message })
   }
-
 }
 
 
-export const getRvnuAccount = async (req, res) => {
-  // Gets users preferred payment account
-  const mobileNumber = req.params.num
-  
-  const query = `SELECT AccountID, FirstName, LastName, MobileNumber, Username, Tl_providerId, RvnuCodeID FROM RvnuAccount WHERE MobileNumber=${mobileNumber}`
-
-  try {
-    conn.query(query, (err, data) => {
-      if(err) return res.status(409).send({ message: err.message })
-      res.status(200).json({data});
-    });
-  } catch (err) {
-      res.status(409).send({ message: err.message })
-  }
-
-}
-
-// Check if RVNU username entered has valid username associated with it
 export const getRecommenderAccount = async (req, res) => {
   // Gets users preferred payment account
   const accountID = req.params.accountId
@@ -209,11 +207,93 @@ export const updateTotalAssets = async (req, res) => {
           } catch (err) {
               res.status(409).send({ message: err.message })
           }
-
         }
-
     });
   });
+  } catch (err) {
+      res.status(409).send({ message: err.message })
+  }
+
+}
+
+export const getRecommender = async (req, res) => {
+
+  const username = req.params.username
+  const sessionId = req.params.sessionId
+  const clientId = req.params.clientId
+
+  // Get the AccountID & RvnuCodeID of the recommender whos username is entered
+  const query = `SELECT AccountID, RvnuCodeID FROM RvnuAccount WHERE Username='${username}'`
+
+  try {
+    conn.query(query, (err, data) => {
+      if(err) return res.status(409).send({ message: err.message })
+
+      Object.keys(data).forEach(function(key) {
+        var row = data[key];
+        const rvnuCodeId = row.RvnuCodeID
+        const recommenderAccountID = row.AccountID
+
+        // Check if a valid RvnuCode is linked to Username
+        if (rvnuCodeId === null) {
+          // If username does not have linked RvnuCode:
+          res.status(200).json('Username has not been validated to earn.');
+
+        } else if (rvnuCodeId.length === 36) {
+          // If valid RvnuCode linked:
+          // Get AccountID linked to the session and make sure this username does not belong to same user 
+          //(i.e cant use your own username)
+          const query = `SELECT AccountID FROM RvnuSession WHERE SessionID='${sessionId}'`
+
+          try {
+            conn.query(query, (err, data) => {
+              if(err) return res.status(409).send({ message: err.message })
+
+              Object.keys(data).forEach(function(key) {
+                var row = data[key];
+                const payerAccountID = row.AccountID
+
+                if (recommenderAccountID === payerAccountID) {
+                  res.status(200).json('Cannot use your own username.');
+                } else {
+                  // Final check, that username has not been previously used at this merchant.
+                  const query = `SELECT SessionID FROM RvnuSession WHERE RecommenderID='${recommenderAccountID}' AND ClientID='${clientId}' AND RvnuFlowSuccess=${true}`
+
+                  try {
+                    conn.query(query, (err, data) => {
+                      if(err) return res.status(409).send({ message: err.message })
+
+                      if (data.length === 0) {
+                        // Add RecommenderID to Session
+                        const query = `UPDATE RvnuSession SET RecommenderID='${recommenderAccountID}' WHERE SessionID ='${sessionId}'`
+
+                        try {
+                          conn.query(query, (err, data) => {
+                            if(err) return res.status(409).send({ message: err.message })
+                            res.status(200).json({data});
+                    
+                        });
+                        } catch (err) {
+                            res.status(409).send({ message: err.message })
+                        }
+
+                      } else {
+                        res.status(200).json('Username has already been used at this merchant');
+                      }
+              
+                  });
+                  } catch (err) {
+                      res.status(409).send({ message: err.message })
+                  }
+                }
+              });
+          });
+          } catch (err) {
+              res.status(409).send({ message: err.message })
+          }
+        }
+      });
+    });
   } catch (err) {
       res.status(409).send({ message: err.message })
   }

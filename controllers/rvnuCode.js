@@ -47,20 +47,3 @@ export const getUserRvnuExpiry = async (req, res) => {
   });
 
 }
-
-export const getRecommenderRvnuCode = async (req, res) => {
-
-  const username = req.params.username
-  
-  const query = `SELECT AccountID, RvnuCodeID FROM RvnuAccount WHERE Username='${username}'`
-
-  try {
-    conn.query(query, (err, data) => {
-      if(err) return res.status(409).send({ message: err.message })
-      res.status(200).json({data});
-    });
-  } catch (err) {
-      res.status(409).send({ message: err.message })
-  }
-
-}

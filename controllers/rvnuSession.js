@@ -113,14 +113,13 @@ export const validateSession = async (req, res) => {
   export const getNewUser = async (req, res) => {
 
     const sessionId = req.params.sessionId
-    const rvnuPaymentId = req.params.rvnuPaymentId
   
-    const query = `SELECT NewUser WHERE SessionID='${sessionId}'`
+    const query = `SELECT NewUser FROM RvnuSession WHERE SessionID='${sessionId}'`
   
     try {
       conn.query(query, (err, data) => {
         if(err) return res.status(409).send({ message: err.message })
-        res.status(409).send({data})
+        res.status(200).json({data});
       });
     } catch (err) {
         res.status(409).send({ message: err.message })
@@ -145,4 +144,40 @@ export const validateSession = async (req, res) => {
         res.status(409).send({ message: err.message })
     }  
   
+  }
+
+
+export const linkAccountToSession = async (req, res) => {
+    // Gets users preferred payment account
+    const mobileNumber = req.params.mobile
+    const sessionId = req.params.sessionId
+    
+    const query = `SELECT AccountID FROM RvnuAccount WHERE MobileNumber=${mobileNumber}`
+  
+    try {
+      conn.query(query, (err, data) => {
+        if(err) return res.status(409).send({ message: err.message })
+  
+        Object.keys(data).forEach(function(key) {
+          var row = data[key];
+          const accountId = row.AccountID
+  
+          if (accountId.length === 36) {
+  
+            const query = `UPDATE RvnuSession SET AccountID='${accountId}' WHERE SessionID ='${sessionId}'`
+  
+            try {
+              conn.query(query, (err, data) => {
+                if(err) return res.status(409).send({ message: err.message })
+                res.status(200).json({data});
+               });
+            } catch (err) {
+                res.status(409).send({ message: err.message })
+            }
+          }
+        });
+      });
+    } catch (err) {
+        res.status(409).send({ message: err.message })
+    }
   }

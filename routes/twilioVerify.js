@@ -8,7 +8,7 @@ import { sendOtp,
 const router = express.Router()
 
 router.post('/sendOtp/:phoneNumber', sendOtp)
-router.post('/verifyOtp/:inputOtp/:phoneNumber', verifyOtp)
+router.post('/verifyOtp/:inputOtp/:phoneNumber/:sessionId', verifyOtp)
 router.post('/sendExpiry/:payerFirstname/:payerUsername/:payerNumber/:usernameExpiryDate', sendUsernameExpiry)
 router.post('/commissionSms/:paymentId/:recommenderName/:recommenderNumber/:payerName/:payerUsername/:merchantName', sendCommissionSms)
 

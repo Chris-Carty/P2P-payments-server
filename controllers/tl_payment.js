@@ -15,140 +15,91 @@ const rvnuMerchantAccountId = process.env.RVNU_MERCHANT_ACCOUNT_ID
 const authServerUri = process.env.AUTH_SERVER_URI
 const environmentUri = process.env.ENVIRONMENT_URI
 
-// Retrieve access token to enable payment initiation
-export const getAccessToken = async (req, res) => {
 
-  const options = {
-    method: "POST",
-    url:  authServerUri + "/connect/token",
-    data: {
-      client_id: clientId,
-      client_secret: clientSecret,
-      scope: "payments",
-      grant_type: 'client_credentials'
-    }
-  };
-  
-  axios.request(options).then(response =>
-    res.json(response.data.access_token)
-  ).catch(function (error) {
-    res.send({ message: error});
-  });
+export const generatePaymentLink = async (req, res) => {
 
-}
+  // Set request vars
+  const clientId = req.params.client_id
+  const rvnuPaymentId = req.params.payment_request_id
+  const sessionId = req.params.sessionId
 
-export const initiatePaymentExistingUser = async (req, res) => {
-
-  // Payment Information 
-  const amount = req.params.amount * 100
-  const amountRounded = Math.round((amount + Number.EPSILON) * 100) / 100
-  const currency = req.params.currency
-  const reference = req.params.reference
-
-  // Payer Information
-  const payerPhoneNumber = req.params.payerMobile
-  const payerId = req.params.payerAccountID
-
-  // Access Token
-  const accessToken = req.params.accessToken
-
-  // Sandbox values
-  //const payerSortCode = "101010"
-  //const payerAccountNumber = "12345681"
-  //const payerProviderId = "mock-payments-gb-redirect"
-
-  // TO DO - request from DB and unencrypt
-  //const payerSortCode = req.params.sortCode
-  //const payerAccountNumber = req.params.AccountNumber
-  //const payerSortCode = "040004"
-  //const payerAccountNumber = "05871454"
-  //const payerProviderId = "ob-monzo"
-  //const payerName = "Christopher Carty"
-
-  const query = `SELECT AccountName, SortCode, AccountNumber, Tl_providerId FROM RvnuAccount WHERE AccountID='${payerId}'`
+  //STEP 1: Get Payment Request values for this payment_request_id
+  const query = `SELECT RvnuSession.AccountID, RvnuSession.NewUser, RvnuPayment.PayerName, RvnuPayment.Currency, RvnuPayment.TotalAmount, RvnuPayment.Reference, RvnuAccount.MobileNumber, RvnuAccount.AccountName, RvnuAccount.SortCode, RvnuAccount.AccountNumber, RvnuAccount.Tl_providerId
+  FROM RvnuSession INNER JOIN RvnuPayment ON RvnuSession.RvnuPaymentID=RvnuPayment.RvnuPaymentID INNER JOIN RvnuAccount ON RvnuAccount.AccountID=RvnuSession.AccountID WHERE RvnuSession.RvnuPaymentID='${rvnuPaymentId}' AND RvnuSession.ClientID='${clientId}' AND RvnuSession.SessionID='${sessionId}'`
 
   try {
     conn.query(query, (err, data) => {
       if(err) return res.status(409).send({ message: err.message })
-
       Object.keys(data).forEach(function(key) {
+        // Set vars to send with TrueLayer payment initiation request
         var row = data[key];
-        const payerSortCode = row.SortCode
+        const payerId = row.AccountID
+        const newUser = row.NewUser
+        const payerName = row.PayerName
+        const currency = row.Currency
+        const amount = row.TotalAmount * 100
+        const amountRounded = Math.round((amount + Number.EPSILON) * 100) / 100
+        const reference = row.Reference
+        const payerAccountName = row.AccountName
         const payerAccountNumber = row.AccountNumber
+        const payerSortCode = row.SortCode
         const payerProviderId = row.Tl_providerId
-        const payerName = row.AccountName
+        const payerPhoneNumber = row.MobileNumber
+        // Sandbox pre-selected account values
+        //const payerSortCode = "101010"
+        //const payerAccountNumber = "12345681"
+        //const payerProviderId = "mock-payments-gb-redirect"
 
-        // Set random idempotencyKey
-        const idempotencyKey = uuidv4();
+        // STEP 2: Retrieve access token to enable payment initiation
+        const accessToken = getAccessToken()
+        // STEP 3: Pass accessToken & payment vars to initate Payment request
+        accessToken.then(function(token) {
 
-        //-----***** PROD *****-----//
-        const body = '{"payment_method":{"type":"bank_transfer","provider_selection":{"type":"preselected","scheme_selection":{"type":"instant_only","allow_remitter_fee":false}, "remitter": {"account_identifier": {"type": "sort_code_account_number","sort_code": "' + payerSortCode + '", "account_number": "' + payerAccountNumber + '"},"account_holder_name": "' + payerName + '"}, "provider_id": "' + payerProviderId + '","scheme_id": "faster_payments_service"},"beneficiary":{"type":"merchant_account","merchant_account_id":"' + rvnuMerchantAccountId + '", "reference":"' + reference + '"}},"user":{"id":"' + payerId + '","name":"' + payerName + '","phone":"' + payerPhoneNumber + '"},"amount_in_minor":' + amountRounded + ',"currency":"' + currency + '"}'
-        
-        
-        const tlSignature = tlSigning.sign({
-            kid,
-            privateKeyPem,
-            method: "POST", // as we're sending a POST request
-            path: "/payments", // the path of our request
-            // All signed headers *must* be included unmodified in the request.
-            headers: { 
-            "Idempotency-Key": idempotencyKey,
-            "Content-Type": "application/json", 
-            },
-            body,
-        });
-          
-        const request = {
-            method: "POST",
-            url: environmentUri + "/payments",
-            // Request body & any signed headers *must* exactly match what was used to generate the signature.
-            data: body,
-            headers: {
-            "Authorization": `Bearer ${accessToken}`,
-            "Idempotency-Key": idempotencyKey,
-            "Content-Type": "application/json",
-            "Tl-Signature": tlSignature,
-            }
-        };
-        
-        // Add 'truelayer-sandbox' for testing
-        axios.request(request).then(response =>
-          res.json('https://payment.truelayer.com/payments#payment_id=' + response.data.id + '&resource_token=' + response.data.resource_token + '&return_uri=http://localhost:3000&c_primary=262626&c_secondary=000000&c_tertiary=000000') 
-        ).catch(function (error) {
-          res.send({ message: error});
-          console.log(error.response.data)
-        });
+          const paymentInit = initiatePayment(token, payerId, newUser, payerName, currency, amountRounded, reference, payerAccountName, payerAccountNumber, payerSortCode, payerProviderId, payerPhoneNumber)
 
+          paymentInit.then(function(response) {
+            console.log(`https://payment.truelayer.com/payments#payment_id=${response.id}&resource_token=${response.resource_token}&return_uri=http://localhost:3000/pay?client_id=${clientId}&c_primary=262626&c_secondary=000000&c_tertiary=000000`)
+          })
 
-      });
+        })
+      })
     });
   } catch (err) {
       res.status(409).send({ message: err.message })
   }
-    
+
+
 }
 
-export const initiatePaymentNewUser = async (req, res) => {
+const getAccessToken = () => {
 
-  // Payment Information 
-  const amount = req.params.amount * 100
-  const amountRounded = Math.round((amount + Number.EPSILON) * 100) / 100
-  const currency = req.params.currency
-  const reference = req.params.reference
+    const options = {
+      method: "POST",
+      url:  authServerUri + "/connect/token",
+      data: {
+        client_id: clientId,
+        client_secret: clientSecret,
+        scope: "payments",
+        grant_type: 'client_credentials'
+      }
+    };
+    
+    return axios.request(options).then(response => {
+    return response.data.access_token }
+    ).catch(function (error) {
+      res.send({ message: error});
+    });
 
-  // Payer Information
-  const payerPhoneNumber = req.params.payerMobile
-  const payerName = req.params.payerName
-  const payerId = req.params.payerAccountID
+}
 
-  // Set random idempotencyKey
+const initiatePayment = (accessToken, payerId, newUser, payerName, currency, amountRounded, reference, payerAccountName, payerAccountNumber, payerSortCode, payerProviderId, payerPhoneNumber) => {
+
   const idempotencyKey = uuidv4();
 
-  // Access Token
-  const accessToken = req.params.accessToken
-  
-  const body = '{"payment_method":{"type":"bank_transfer","provider_selection":{"type":"user_selected","scheme_selection":{"type":"instant_only","allow_remitter_fee":false}},"beneficiary":{"type":"merchant_account","merchant_account_id":"' + rvnuMerchantAccountId + '", "reference":"' + reference + '"}},"user":{"id":"' + payerId + '","name":"' + payerName + '","phone":"' + payerPhoneNumber + '"},"amount_in_minor":' + amountRounded + ',"currency":"' + currency + '"}'
-  
+  //-----***** PRODUCTION BODY *****-----//
+  // If newUser === 1 or payerBankInfo missing, show bank selector
+  const body = (newUser === 1 || payerProviderId.length === 0 || payerSortCode.length === 0 || payerAccountNumber.length === 0 || payerAccountName.length === 0 ) ? '{"payment_method":{"type":"bank_transfer","provider_selection":{"type":"user_selected","scheme_selection":{"type":"instant_only","allow_remitter_fee":false}},"beneficiary":{"type":"merchant_account","merchant_account_id":"' + rvnuMerchantAccountId + '", "reference":"' + reference + '"}},"user":{"id":"' + payerId + '","name":"' + payerName + '","phone":"' + payerPhoneNumber + '"},"amount_in_minor":' + amountRounded + ',"currency":"' + currency + '"}' : '{"payment_method":{"type":"bank_transfer","provider_selection":{"type":"preselected","scheme_selection":{"type":"instant_only","allow_remitter_fee":false}, "remitter": {"account_identifier": {"type": "sort_code_account_number","sort_code": "' + payerSortCode + '", "account_number": "' + payerAccountNumber + '"},"account_holder_name": "' + payerName + '"}, "provider_id": "' + payerProviderId + '","scheme_id": "faster_payments_service"},"beneficiary":{"type":"merchant_account","merchant_account_id":"' + rvnuMerchantAccountId + '", "reference":"' + reference + '"}},"user":{"id":"' + payerId + '","name":"' + payerName + '","phone":"' + payerPhoneNumber + '"},"amount_in_minor":' + amountRounded + ',"currency":"' + currency + '"}'
+
   const tlSignature = tlSigning.sign({
       kid,
       privateKeyPem,
@@ -161,7 +112,8 @@ export const initiatePaymentNewUser = async (req, res) => {
       },
       body,
   });
-    
+        
+          
   const request = {
       method: "POST",
       url: environmentUri + "/payments",
@@ -174,73 +126,13 @@ export const initiatePaymentNewUser = async (req, res) => {
       "Tl-Signature": tlSignature,
       }
   };
-  
-  // Add 'truelayer-sandbox' for testing
-  axios.request(request).then(response =>
-     res.json('https://payment.truelayer.com/payments#payment_id=' + response.data.id + '&resource_token=' + response.data.resource_token + '&return_uri=http://localhost:3000&c_primary=262626&c_secondary=000000&c_tertiary=000000') 
+    
+  return axios.request(request).then(response => response.data
   ).catch(function (error) {
-    res.send({ message: error});
     console.log(error.response.data)
   });
-    
-}
-
-
-// Store Transaction Information in Database
-export const storeTransaction = async (req, res) => {
-
-
-    const paymentID = req.params.transactionID
-    const merchantID = req.params.merchantID
-    const accountID = req.params.payerAccountID
-    const recommenderID = req.params.recommenderID
-    const currency = req.params.currency
-    const amount = req.params.amount
-    const reference = req.params.reference
-    const assetsUpdated = 0
-    const rvnuServiceFee = (amount * 0.007)
-    const rvnuFeeRounded = Math.round((rvnuServiceFee + Number.EPSILON) * 100) / 100
-
-    const query = `SELECT CommissionPercentage FROM Merchant WHERE MerchantID='${merchantID}'`
-
-    try {
-
-      conn.query(query, (err, data) => {
-        if(err) return res.status(409).send({ message: err.message })
-        //res.status(200).json({data});
-        //console.log(res.status(200).json({data}))
-
-        Object.keys(data).forEach(function(key) {
-          var row = data[key];
-          const merchantCommissionPercentage = row.CommissionPercentage
-
-          // Calc commision for user who's code was used
-          const recommenderCommissionEarned  = amount * (merchantCommissionPercentage / 100)
-          const recommenderCommissionRounded = Math.round((recommenderCommissionEarned + Number.EPSILON) * 100) / 100
-
-
-          const query = `INSERT INTO RvnuTransaction (PaymentID, MerchantID, AccountID, DateTime, Currency, TotalAmount, RvnuFee, RecommenderID, RecommenderCommission, RecommenderAssetsUpdated, Reference) VALUES ('${paymentID}', '${merchantID}', '${accountID}', CURRENT_TIMESTAMP, '${currency}', '${amount}','${rvnuFeeRounded}', '${recommenderID}', '${recommenderCommissionRounded}', '${assetsUpdated}','${reference}')`
-
-
-          try {
-            conn.query(query, (err, data) => {
-              if(err) return res.status(409).send({ message: err.message })
-              res.status(200).json({data});
-      
-          });
-          } catch (err) {
-              res.status(409).send({ message: err.message })
-              console.log(error.response.data)
-          }
-
-      });
-    });
-    } catch (err) {
-        res.status(409).send({ message: err.message })
-    }
 
 }
-
 
 // Retrieve access token to enable payment initiation
 export const getPaymentStatus = async (req, res) => {

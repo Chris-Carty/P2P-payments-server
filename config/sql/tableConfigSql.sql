@@ -2,8 +2,8 @@
 CREATE TABLE RvnuAccount
 (
  AccountID varchar(36) NOT NULL PRIMARY KEY,
- FirstName varchar(50) NOT NULL,
- LastName varchar(50) NOT NULL,
+ FirstName varchar(50) DEFAULT NULL,
+ LastName varchar(50) DEFAULT NULL,
  DoB varchar(10) DEFAULT NULL,
  MobileNumber varchar(50) NOT NULL,
  Username varchar(15) DEFAULT NULL,
@@ -28,7 +28,7 @@ CREATE TABLE RvnuAccount
 INSERT INTO RvnuAccount
  (AccountID, FirstName, LastName, MobileNumber, Username, RvnuCodeID, AccountCreated)
 VALUES
- ('5548b45b-5580-41be-bad6-b8b1098d3d7d', 'Chris', 'Carty', '+447527943283', 'chris', 'ea0f16f6-9302-4ad1-87f5-a174133ec425', '2022-06-01 22:42:00'),
+ ('5548b45b-5580-41be-bad6-b8b1098d3d7d', 'Chris', 'Carty', '+447527943282', 'chris', 'ea0f16f6-9302-4ad1-87f5-a174133ec425', '2022-06-01 22:42:00'),
 
  ('85f13fd6-bd1d-4272-8256-ec521eec091c', 'Jack', 'Hayden','+447487811150', 'jack', NULL, '2022-06-01 22:42:00'),
 
@@ -91,12 +91,14 @@ CREATE TABLE RvnuSession
  MobileNumber varchar(50) DEFAULT NULL,
  Verified tinyint(1) DEFAULT 0,
  AccountID varchar(36) NOT NULL,
- SessionStart datetime NOT NULL,
+ NewUser tinyint(1) DEFAULT 0,
  RecommenderID varchar(36) DEFAULT NULL,
  RvnuPaymentID varchar(36) NOT NULL,
  RecommenderAssetsUpdated tinyint(1) DEFAULT 0,
- NewUser tinyint(1) DEFAULT 0,
- SessionTimeout datetime NOT NULL
+ SessionStart datetime NOT NULL,
+ SessionTimeout datetime NOT NULL,
+ RvnuFlowSuccess tinyint(1) DEFAULT 0,
+ RvnuFlowDescription varchar(100) DEFAULT NULL
 );
 
 --TODO Generate TrueLayerPaymentID when this request is made by the client. 

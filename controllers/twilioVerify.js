@@ -36,12 +36,25 @@ export const verifyOtp = async (req, res) => {
 
   const phoneNum = req.params.phoneNumber
   const otp = req.params.inputOtp
+  const sessionId = req.params.sessionId
 
     client.verify.services(serviceID)
       .verificationChecks
       .create({to: phoneNum, code: otp})
       .then(verification_check => {
-        res.status(200).json({ verification_check })
+        //res.status(200).json({ verification_check })
+        if (verification_check.valid === true) {
+          const query = `UPDATE RvnuSession SET Verified='${1}' WHERE SessionID ='${sessionId}'`
+
+          try {
+            conn.query(query, (err, data) => {
+              if(err) return res.status(409).send({ message: err.message })
+              res.status(200).json({ verification_check });
+            });
+          } catch (err) {
+              res.status(409).send({ message: err.message })
+          }
+        }
       })
       .catch(error => {
         res.status(404).json({ error })
