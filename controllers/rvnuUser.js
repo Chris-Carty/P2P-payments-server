@@ -229,70 +229,77 @@ export const getRecommender = async (req, res) => {
     conn.query(query, (err, data) => {
       if(err) return res.status(409).send({ message: err.message })
 
-      Object.keys(data).forEach(function(key) {
-        var row = data[key];
-        const rvnuCodeId = row.RvnuCodeID
-        const recommenderAccountID = row.AccountID
+      if (data.length === 0) {
+        
+        res.status(409).json('Username does not exist.');
 
-        // Check if a valid RvnuCode is linked to Username
-        if (rvnuCodeId === null) {
-          // If username does not have linked RvnuCode:
-          res.status(200).json('Username has not been validated to earn.');
+      } else {
 
-        } else if (rvnuCodeId.length === 36) {
-          // If valid RvnuCode linked:
-          // Get AccountID linked to the session and make sure this username does not belong to same user 
-          //(i.e cant use your own username)
-          const query = `SELECT AccountID FROM RvnuSession WHERE SessionID='${sessionId}'`
-
-          try {
-            conn.query(query, (err, data) => {
-              if(err) return res.status(409).send({ message: err.message })
-
-              Object.keys(data).forEach(function(key) {
-                var row = data[key];
-                const payerAccountID = row.AccountID
-
-                if (recommenderAccountID === payerAccountID) {
-                  res.status(200).json('Cannot use your own username.');
-                } else {
-                  // Final check, that username has not been previously used at this merchant.
-                  const query = `SELECT SessionID FROM RvnuSession WHERE RecommenderID='${recommenderAccountID}' AND ClientID='${clientId}' AND RvnuFlowSuccess=${true}`
-
-                  try {
-                    conn.query(query, (err, data) => {
-                      if(err) return res.status(409).send({ message: err.message })
-
-                      if (data.length === 0) {
-                        // Add RecommenderID to Session
-                        const query = `UPDATE RvnuSession SET RecommenderID='${recommenderAccountID}' WHERE SessionID ='${sessionId}'`
-
-                        try {
-                          conn.query(query, (err, data) => {
-                            if(err) return res.status(409).send({ message: err.message })
-                            res.status(200).json({data});
-                    
-                        });
-                        } catch (err) {
-                            res.status(409).send({ message: err.message })
+        Object.keys(data).forEach(function(key) {
+          var row = data[key];
+          const rvnuCodeId = row.RvnuCodeID
+          const recommenderAccountID = row.AccountID
+  
+          // Check if a valid RvnuCode is linked to Username
+          if (rvnuCodeId === null) {
+            // If username does not have linked RvnuCode:
+            res.status(200).json('Username has not been validated to earn.');
+  
+          } else if (rvnuCodeId.length === 36) {
+            // If valid RvnuCode linked:
+            // Get AccountID linked to the session and make sure this username does not belong to same user 
+            //(i.e cant use your own username)
+            const query = `SELECT AccountID FROM RvnuSession WHERE SessionID='${sessionId}'`
+  
+            try {
+              conn.query(query, (err, data) => {
+                if(err) return res.status(409).send({ message: err.message })
+  
+                Object.keys(data).forEach(function(key) {
+                  var row = data[key];
+                  const payerAccountID = row.AccountID
+  
+                  if (recommenderAccountID === payerAccountID) {
+                    res.status(200).json('Cannot use your own username.');
+                  } else {
+                    // Final check, that username has not been previously used at this merchant.
+                    const query = `SELECT SessionID FROM RvnuSession WHERE RecommenderID='${recommenderAccountID}' AND ClientID='${clientId}' AND RvnuFlowSuccess=${true}`
+  
+                    try {
+                      conn.query(query, (err, data) => {
+                        if(err) return res.status(409).send({ message: err.message })
+  
+                        if (data.length === 0) {
+                          // Add RecommenderID to Session
+                          const query = `UPDATE RvnuSession SET RecommenderID='${recommenderAccountID}' WHERE SessionID ='${sessionId}'`
+  
+                          try {
+                            conn.query(query, (err, data) => {
+                              if(err) return res.status(409).send({ message: err.message })
+                              res.status(200).json({data});
+                      
+                          });
+                          } catch (err) {
+                              res.status(409).send({ message: err.message })
+                          }
+  
+                        } else {
+                          res.status(200).json('Username has already been used at this merchant');
                         }
-
-                      } else {
-                        res.status(200).json('Username has already been used at this merchant');
-                      }
-              
-                  });
-                  } catch (err) {
-                      res.status(409).send({ message: err.message })
+                
+                    });
+                    } catch (err) {
+                        res.status(409).send({ message: err.message })
+                    }
                   }
-                }
-              });
-          });
-          } catch (err) {
-              res.status(409).send({ message: err.message })
+                });
+            });
+            } catch (err) {
+                res.status(409).send({ message: err.message })
+            }
           }
-        }
-      });
+        });
+      }
     });
   } catch (err) {
       res.status(409).send({ message: err.message })

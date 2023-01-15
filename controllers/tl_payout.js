@@ -85,66 +85,6 @@ export const initiateBusinessAccountPayout = async (req, res) => {
     
 }
 
-export const initiateMerchantPayout = async (req, res) => {
-
-
-    // Payment Information 
-    const amount = req.params.amount * 100
-    const amountRounded = Math.round((amount + Number.EPSILON) * 100) / 100
-    const reference = req.params.reference
-    const MerchantId = req.params.MerchantId
-
-    // TODO USER MERCHANT ID TO GET MERCHANT NAME + IBAN
-
-    // To get this from DB based on merchant name (Do not pass over request)
-    const MerchantName = "ASOS"
-    const MerchantIban =  "GB75CLRB04066800000871"
-  
-    // Set random idempotencyKey
-    const idempotencyKey = uuidv4();
-  
-    // Access Token
-    const accessToken = req.params.accessToken
-      
-    // SOURCE ACCOUNT PRESELECTED ROUTE
-    const body = '{"beneficiary":{"type":"external_account","account_identifier":{"type":"iban","iban":"' + MerchantIban + '"},"reference":"' + reference + '","account_holder_name":"' + MerchantName + '"},"merchant_account_id":"' + rvnuMerchantAccountId + '","amount_in_minor":' + amountRounded + ',"currency":"GBP"}'
-    
-    
-    const tlSignature = tlSigning.sign({
-        kid,
-        privateKeyPem,
-        method: "POST", // as we're sending a POST request
-        path: "/payouts", // the path of our request
-        // All signed headers *must* be included unmodified in the request.
-        headers: { 
-        "Idempotency-Key": idempotencyKey,
-        "Content-Type": "application/json", 
-        },
-        body,
-    });
-      
-    const request = {
-        method: "POST",
-        url: "https://api.truelayer-sandbox.com/payouts",
-        // Request body & any signed headers *must* exactly match what was used to generate the signature.
-        data: body,
-        headers: {
-        "Authorization": `Bearer ${accessToken}`,
-        "Idempotency-Key": idempotencyKey,
-        "Content-Type": "application/json",
-        "Tl-Signature": tlSignature,
-        }
-    };
-    
-    axios.request(request).then(response =>
-      console.log(response.data) 
-    ).catch(function (error) {
-      console.log(error.response.data)
-    });
-      
-}
-  
-
 // Retrieve status of a payout
 export const getPayoutStatus = async (req, res) => {
 
@@ -166,4 +106,4 @@ export const getPayoutStatus = async (req, res) => {
       res.send({ message: error});
     });
   
-  }
+}

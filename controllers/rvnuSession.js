@@ -181,3 +181,22 @@ export const linkAccountToSession = async (req, res) => {
         res.status(409).send({ message: err.message })
     }
   }
+
+  export const getMerchantRedirectUri = async (req, res) => {
+    // Gets users preferred payment account
+    const trueLayerPaymentId = req.params.trueLayerPaymentId
+    
+    const query = `SELECT RvnuMerchant.MerchantName, RvnuMerchant.RedirectUri FROM RvnuPayment INNER JOIN RvnuSession ON RvnuPayment.RvnuPaymentID=RvnuSession.RvnuPaymentID INNER JOIN RvnuApp ON RvnuSession.ClientID=RvnuApp.ClientID INNER JOIN RvnuMerchant ON RvnuApp.MerchantID=RvnuMerchant.MerchantID
+    WHERE RvnuPayment.TrueLayerPaymentID='${trueLayerPaymentId}'`
+  
+    try {
+      conn.query(query, (err, data) => {
+        if(err) return res.status(409).send({ message: err.message })
+
+        res.status(200).json({data});
+
+      });
+    } catch (err) {
+        res.status(409).send({ message: err.message })
+    }
+  }

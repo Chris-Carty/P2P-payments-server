@@ -5,7 +5,8 @@ import { createSession,
          updateNewUser,
          getNewUser,
          updateVerified,
-         linkAccountToSession
+         linkAccountToSession,
+         getMerchantRedirectUri
         } from '../controllers/rvnuSession.js'
 const router = express.Router()
 
@@ -16,5 +17,6 @@ router.post('/newUser/:sessionId/:mobileNumber/:bool', updateNewUser)
 router.get('/newUserStatus/:sessionId/', getNewUser)
 router.post('/verified/:sessionId/:mobileNumber', updateVerified)
 router.get('/linkAccount/:mobile/:sessionId', linkAccountToSession)
+router.get('/merchantRedirect/:trueLayerPaymentId', getMerchantRedirectUri)
 
 export default router
