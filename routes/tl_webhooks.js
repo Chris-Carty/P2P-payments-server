@@ -1,8 +1,8 @@
-import express from 'express'
-import { handleEventNotification } from '../controllers/tl_webhooks.js'
+import express from "express";
+import { handleEventNotification } from "../controllers/tl_webhooks.js";
 
-const router = express.Router()
+const router = express.Router();
 
-router.post('/webhook', handleEventNotification)
+router.post("/webhook", handleEventNotification);
 
-export default router
+export default router;

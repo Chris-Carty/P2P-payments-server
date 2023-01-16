@@ -1,8 +1,8 @@
-import express from 'express'
-import { getProviders } from '../controllers/tl_providers.js'
+import express from "express";
+import { getProviders } from "../controllers/tl_providers.js";
 
-const router = express.Router()
+const router = express.Router();
 
-router.post('/getProviders', getProviders)
+router.post("/getProviders", getProviders);
 
-export default router
+export default router;
