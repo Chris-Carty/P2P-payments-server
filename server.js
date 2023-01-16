@@ -15,7 +15,7 @@ const app = express();
 const port = process.env.PORT || 8080;
 app.use(express.json());
 
-var allowedOrigins = ["http://localhost:3000", "https://rvnu.app"];
+var allowedOrigins = ["https://rvnu.app"];
 app.use(
   cors({
     origin: function (origin, callback) {
