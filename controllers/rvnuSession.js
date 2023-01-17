@@ -10,7 +10,7 @@ export const createSession = async (req, res) => {
   const accountId = req.params.accountId;
 
   // Insert Session vars into table
-  const query = `INSERT INTO RvnuSession (SessionID, ClientID, AccountID, SessionStart, RvnuPaymentID, SessionTimeout) VALUES ('${sessionId}', '${clientId}', '${accountId}',  CURRENT_TIMESTAMP, '${rvnuPaymentId}', DATE_ADD(now(), INTERVAL 30 MINUTE))`;
+  const query = `INSERT INTO RvnuSession (SessionID, ClientID, AccountID, SessionStart, RvnuPaymentID, SessionTimeout) VALUES ('${sessionId}', '${clientId}', '${accountId}',  CURRENT_TIMESTAMP, '${rvnuPaymentId}', DATE_ADD(now(), INTERVAL 9 MINUTE))`;
 
   try {
     conn.query(query, (err, data) => {
