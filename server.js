@@ -12,7 +12,7 @@ import tl_webhooks from "./routes/tl_webhooks.js";
 import session from "./routes/rvnuSession.js";
 
 const app = express();
-const port = process.env.PORT || 80;
+const port = process.env.PORT || 8080;
 app.use(express.json());
 //app.use(cors());
 
