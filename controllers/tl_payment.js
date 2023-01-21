@@ -78,7 +78,7 @@ export const generatePaymentLink = async (req, res) => {
                 res
                   .status(200)
                   .json(
-                    `https://payment.truelayer.com/payments#payment_id=${payment.id}&resource_token=${payment.resource_token}&return_uri=http://localhost:3000/status&c_primary=262626&c_secondary=000000&c_tertiary=000000`
+                    `https://payment.truelayer.com/payments#payment_id=${payment.id}&resource_token=${payment.resource_token}&return_uri=https://rvnu.app/status&c_primary=262626&c_secondary=000000&c_tertiary=000000`
                   );
               });
             } catch (err) {
