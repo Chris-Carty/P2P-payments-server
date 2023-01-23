@@ -199,7 +199,7 @@ export const getPaymentStatus = async (req, res) => {
   accessToken.then(function (token) {
     const request = {
       method: "GET",
-      url: environmentUri + "/payments/${paymentId}",
+      url: environmentUri + `/payments/${paymentId}`,
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
