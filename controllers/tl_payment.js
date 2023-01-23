@@ -297,6 +297,7 @@ export const getPaymentInfoForClient = async (req, res) => {
 
 // Retrieve Successful payment info for payment success screen
 export const getSuccessfulPaymentInfo = async (req, res) => {
+  let rvnuPaymentId = "";
   let recommenderUsername = "";
   let recommenderCommission = 0;
   let payerId = "";
@@ -306,7 +307,7 @@ export const getSuccessfulPaymentInfo = async (req, res) => {
 
   const trueLayerPaymentId = req.params.trueLayerPaymentId;
 
-  const query = `SELECT RvnuAccount.Username, RvnuPayment.Commission, RvnuPayment.PaymentTimeout, RvnuSession.AccountID FROM RvnuPayment INNER JOIN RvnuSession ON RvnuPayment.RvnuPaymentID=RvnuSession.RvnuPaymentID INNER JOIN RvnuAccount ON RvnuSession.RecommenderID=RvnuAccount.AccountID WHERE RvnuPayment.TrueLayerPaymentID='${trueLayerPaymentId}'`;
+  const query = `SELECT RvnuAccount.Username, RvnuPayment.RvnuPaymentID, RvnuPayment.Commission, RvnuPayment.PaymentTimeout, RvnuSession.AccountID FROM RvnuPayment INNER JOIN RvnuSession ON RvnuPayment.RvnuPaymentID=RvnuSession.RvnuPaymentID INNER JOIN RvnuAccount ON RvnuSession.RecommenderID=RvnuAccount.AccountID WHERE RvnuPayment.TrueLayerPaymentID='${trueLayerPaymentId}'`;
 
   try {
     conn.query(query, (err, data) => {
@@ -317,6 +318,7 @@ export const getSuccessfulPaymentInfo = async (req, res) => {
       } else {
         Object.keys(data).forEach(function (key) {
           var row = data[key];
+          rvnuPaymentId = row.RvnuPaymentID;
           recommenderUsername = row.Username;
           recommenderCommission = row.Commission;
           payerId = row.AccountID;
@@ -347,6 +349,7 @@ export const getSuccessfulPaymentInfo = async (req, res) => {
               });
 
               return res.json({
+                rvnuPaymentId,
                 recommenderUsername,
                 recommenderCommission,
                 payerUsername,
