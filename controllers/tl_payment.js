@@ -233,7 +233,7 @@ const getAccessToken = () => {
       return response.data.access_token;
     })
     .catch(function (error) {
-      res.send({ message: error });
+      return error;
     });
 };
 
