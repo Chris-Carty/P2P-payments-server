@@ -254,6 +254,8 @@ export const validatePayment = async (req, res) => {
           .status(408)
           .send({ message: "Invalid client_id or payment_request_id" });
       } else {
+        res.status(200).json({ data });
+        /*
         Object.keys(data).forEach(function (key) {
           var row = data[key];
           const PaymentTimeout = row.PaymentTimeout;
@@ -267,10 +269,9 @@ export const validatePayment = async (req, res) => {
           if (!isInThePast(new Date(PaymentTimeout))) {
             // If not expired, send response object.
             res.status(200).json({ data });
-          } else {
-            res.status(408).json("PaymentTimeout");
-          }
+          } 
         });
+        */
       }
     });
   } catch (err) {
@@ -303,11 +304,10 @@ export const getSuccessfulPaymentInfo = async (req, res) => {
   let payerId = "";
   let payerUsername = "";
   let payerUsernameExpiry = "";
-  let paymentTimeout = "";
 
   const trueLayerPaymentId = req.params.trueLayerPaymentId;
 
-  const query = `SELECT RvnuAccount.Username, RvnuPayment.RvnuPaymentID, RvnuPayment.Commission, RvnuPayment.PaymentTimeout, RvnuSession.AccountID FROM RvnuPayment INNER JOIN RvnuSession ON RvnuPayment.RvnuPaymentID=RvnuSession.RvnuPaymentID INNER JOIN RvnuAccount ON RvnuSession.RecommenderID=RvnuAccount.AccountID WHERE RvnuPayment.TrueLayerPaymentID='${trueLayerPaymentId}'`;
+  const query = `SELECT RvnuAccount.Username, RvnuPayment.RvnuPaymentID, RvnuPayment.Commission, RvnuSession.AccountID FROM RvnuPayment INNER JOIN RvnuSession ON RvnuPayment.RvnuPaymentID=RvnuSession.RvnuPaymentID INNER JOIN RvnuAccount ON RvnuSession.RecommenderID=RvnuAccount.AccountID WHERE RvnuPayment.TrueLayerPaymentID='${trueLayerPaymentId}'`;
 
   try {
     conn.query(query, (err, data) => {
@@ -322,45 +322,32 @@ export const getSuccessfulPaymentInfo = async (req, res) => {
           recommenderUsername = row.Username;
           recommenderCommission = row.Commission;
           payerId = row.AccountID;
-          paymentTimeout = row.PaymentTimeout;
         });
 
-        function isInThePast(date) {
-          const today = new Date();
-          return date < today;
-        }
-
-        // Ensure payment has not expired.
-        if (!isInThePast(new Date(paymentTimeout))) {
-          // If not expired, send response object.
-          //res.status(200).json({data});
-          const query = `SELECT RvnuAccount.Username, RvnuCode.Expiry FROM RvnuAccount
+        const query = `SELECT RvnuAccount.Username, RvnuCode.Expiry FROM RvnuAccount
           INNER JOIN RvnuCode ON RvnuAccount.RvnuCodeID=RvnuCode.RvnuCodeID
           WHERE RvnuAccount.AccountID='${payerId}'`;
 
-          try {
-            conn.query(query, (err, data) => {
-              if (err) return res.status(409).send({ message: err.message });
+        try {
+          conn.query(query, (err, data) => {
+            if (err) return res.status(409).send({ message: err.message });
 
-              Object.keys(data).forEach(function (key) {
-                var row = data[key];
-                payerUsername = row.Username;
-                payerUsernameExpiry = row.Expiry;
-              });
-
-              return res.json({
-                rvnuPaymentId,
-                recommenderUsername,
-                recommenderCommission,
-                payerUsername,
-                payerUsernameExpiry,
-              });
+            Object.keys(data).forEach(function (key) {
+              var row = data[key];
+              payerUsername = row.Username;
+              payerUsernameExpiry = row.Expiry;
             });
-          } catch (err) {
-            res.status(409).send({ message: err.message });
-          }
-        } else {
-          res.status(408).json("PaymentTimeout");
+
+            return res.status(200).json({
+              rvnuPaymentId,
+              recommenderUsername,
+              recommenderCommission,
+              payerUsername,
+              payerUsernameExpiry,
+            });
+          });
+        } catch (err) {
+          res.status(409).send({ message: err.message });
         }
       }
     });
