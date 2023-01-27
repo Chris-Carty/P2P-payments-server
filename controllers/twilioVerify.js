@@ -18,7 +18,7 @@ export const sendOtp = async (req, res) => {
 
   client.verify
     .services(serviceID)
-    .verifications// TO DO: MAKE SMS SENDER NAME OF COMPANY
+    .verifications // TO DO: MAKE SMS SENDER NAME OF COMPANY
     .create({ to: phoneNum, channel: "sms" })
     .then((verification) => {
       res.status(200).json({ verification });
@@ -50,6 +50,8 @@ export const verifyOtp = async (req, res) => {
         } catch (err) {
           res.status(409).send({ message: err.message });
         }
+      } else if (verification_check.valid === false) {
+        res.status(200).json({ verification_check });
       }
     })
     .catch((error) => {

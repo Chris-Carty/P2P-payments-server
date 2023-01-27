@@ -112,7 +112,7 @@ CREATE TABLE RvnuPayment
  RvnuFee decimal(10,2) NOT NULL,
  Commission decimal(10,2) NOT NULL,
  Reference varchar(36) NOT NULL,
- InitiatedAt datetime NOT NULL,
+ RequestedAt datetime NOT NULL,
  PaymentTimeout datetime NOT NULL,
  TrueLayerPaymentID varchar(36) DEFAULT NULL,
  WebhookStatus varchar(20) DEFAULT NULL,
@@ -122,7 +122,7 @@ CREATE TABLE RvnuPayment
 );
 
 INSERT INTO RvnuPayment
- (RvnuPaymentID, ClientID, PayerName, Currency, TotalAmount, RvnuFee, Commission, Reference, InitiatedAt, PaymentTimeout)
+ (RvnuPaymentID, ClientID, PayerName, Currency, TotalAmount, RvnuFee, Commission, Reference, RequestedAt, PaymentTimeout)
 VALUES
  ('4310626d-9c91-434d-ab69-cfa7598178be', '94ff854c-5015-4f15-9ff5-43106b4d0b7a', 'Chris Carty', 'GBP', 2.50, 0.10, 0.25, 'GB-TEST-123','2022-12-27 10:00:00', '2022-12-27 10:30:00');
 
@@ -146,24 +146,26 @@ VALUES
 
 CREATE TABLE RvnuBusinessAccountPayout
 (
- RvnuPayoutID varchar(36) NOT NULL PRIMARY KEY, -- primary key column
+ PayoutID varchar(36) NOT NULL PRIMARY KEY, -- primary key column
  TotalAmount decimal(10,2) NOT NULL, 
  DateTime datetime NOT NULL
 );
 
 CREATE TABLE RvnuMerchantPayout
 (
- MerchantPayoutID varchar(36) NOT NULL PRIMARY KEY, -- primary key column
+ PayoutID varchar(36) NOT NULL PRIMARY KEY, -- primary key column
  AccountID varchar(36) NOT NULL,
  TotalAmount decimal(10,2) NOT NULL, 
  DateTime datetime NOT NULL
 );
 
-CREATE TABLE CommissionPayout
+CREATE TABLE RvnuCommissionPayout
 (
- CommissionPayoutID varchar(36) NOT NULL PRIMARY KEY, -- primary key column
+ PayoutID varchar(36) NOT NULL PRIMARY KEY, -- primary key column
  AccountID varchar(36) NOT NULL,
  TotalAmount decimal(10,2) NOT NULL, 
- DateTime datetime NOT NULL
+ Reference varchar(18) NOT NULL,
+ TrueLayerPaymentId varchar(36) NOT NULL,
+ ExecutedAt datetime DEFAULT NULL
 );
 

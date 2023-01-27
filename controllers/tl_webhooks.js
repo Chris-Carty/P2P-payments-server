@@ -83,74 +83,112 @@ const addUserBankDetails = async (requestItems) => {
 // Initiate commission payout
 const initiateCommissionPayout = async (requestItems) => {
   const payment_id = requestItems.payment_id;
-  console.log("payment_id:" + payment_id);
 
-  // TODO get this info fro backend using RVNU paymentID
-  //Payment Information
-  const amount = 100;
-  const amountRounded = 10;
-  const reference = "test-payout-123";
+  // Update database to save users payment details for next time
+  const query = `SELECT RvnuPayment.Commission, RvnuAccount.AccountID, RvnuAccount.iban, RvnuAccount.AccountName FROM RvnuPayment INNER JOIN RvnuSession ON RvnuPayment.RvnuPaymentID=RvnuSession.RvnuPaymentID INNER JOIN RvnuAccount ON RvnuSession.RecommenderID=RvnuAccount.AccountID WHERE RvnuPayment.TrueLayerPaymentID='${payment_id}'`;
 
-  // TODO USER MERCHANT ID TO GET MERCHANT NAME + IBAN
+  try {
+    conn.query(query, (err, data) => {
+      if (err) return console.log({ message: err.message });
 
-  // To get this from DB based on merchant name (Do not pass over request)
-  const RvnuRecommenderName = "Christopher Carty";
-  const RvnuRecommenderIban = "GB29LOYD77714533825468";
+      Object.keys(data).forEach(function (key) {
+        // STEP 2: Store the vars from the query
+        var row = data[key];
+        const amount = row.Commission * 100;
+        const amountRounded = Math.round((amount + Number.EPSILON) * 100) / 100;
+        const RvnuRecommenderId = row.AccountID;
+        const RvnuRecommenderIban = row.iban;
+        const RvnuRecommenderName = row.AccountName;
+        const reference = "Commission payout";
+        //const reference = uuidv4().substring(0, 18);
 
-  // Set random idempotencyKey
-  const idempotencyKey = uuidv4();
+        // Set random idempotencyKey
+        const idempotencyKey = uuidv4();
 
-  // Access Token
-  const accessToken = getAccessToken();
+        // Access Token
+        const accessToken = getAccessToken();
 
-  accessToken.then(function (token) {
-    // SOURCE ACCOUNT PRESELECTED ROUTE
-    const body =
-      '{"beneficiary":{"type":"external_account","account_identifier":{"type":"iban","iban":"' +
-      RvnuRecommenderIban +
-      '"},"reference":"' +
-      reference +
-      '","account_holder_name":"' +
-      RvnuRecommenderName +
-      '"},"merchant_account_id":"' +
-      rvnuMerchantAccountId +
-      '","amount_in_minor":' +
-      amountRounded +
-      ',"currency":"GBP"}';
+        accessToken.then(function (token) {
+          // SOURCE ACCOUNT PRESELECTED ROUTE
+          const body =
+            '{"beneficiary":{"type":"external_account","account_identifier":{"type":"iban","iban":"' +
+            RvnuRecommenderIban +
+            '"},"reference":"' +
+            reference +
+            '","account_holder_name":"' +
+            RvnuRecommenderName +
+            '"},"merchant_account_id":"' +
+            rvnuMerchantAccountId +
+            '","amount_in_minor":' +
+            amountRounded +
+            ',"currency":"GBP"}';
 
-    const tlSignature = tlSigning.sign({
-      kid,
-      privateKeyPem,
-      method: "POST", // as we're sending a POST request
-      path: "/payouts", // the path of our request
-      // All signed headers *must* be included unmodified in the request.
-      headers: {
-        "Idempotency-Key": idempotencyKey,
-        "Content-Type": "application/json",
-      },
-      body,
-    });
+          const tlSignature = tlSigning.sign({
+            kid,
+            privateKeyPem,
+            method: "POST", // as we're sending a POST request
+            path: "/payouts", // the path of our request
+            // All signed headers *must* be included unmodified in the request.
+            headers: {
+              "Idempotency-Key": idempotencyKey,
+              "Content-Type": "application/json",
+            },
+            body,
+          });
 
-    const request = {
-      method: "POST",
-      url: environmentUri + "/payouts",
-      // Request body & any signed headers *must* exactly match what was used to generate the signature.
-      data: body,
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Idempotency-Key": idempotencyKey,
-        "Content-Type": "application/json",
-        "Tl-Signature": tlSignature,
-      },
-    };
+          const request = {
+            method: "POST",
+            url: environmentUri + "/payouts",
+            // Request body & any signed headers *must* exactly match what was used to generate the signature.
+            data: body,
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Idempotency-Key": idempotencyKey,
+              "Content-Type": "application/json",
+              "Tl-Signature": tlSignature,
+            },
+          };
 
-    axios
-      .request(request)
-      .then((response) => console.log(response.data))
-      .catch(function (error) {
-        console.log(error.response.data);
+          axios
+            .request(request)
+            .then((response) =>
+              updatePayoutTable(
+                response.data.id,
+                RvnuRecommenderId,
+                amountRounded,
+                reference,
+                payment_id
+              )
+            )
+            .catch(function (error) {
+              console.log(error.response.data);
+            });
+        });
       });
-  });
+    });
+  } catch (err) {
+    console.log(err.response.data);
+  }
+};
+
+const updatePayoutTable = async (
+  payoutId,
+  accountId,
+  amount,
+  reference,
+  payment_id
+) => {
+  // Update database to save users payment details for next time
+  const query = `INSERT INTO RvnuCommissionPayout (PayoutID, AccountID, TotalAmount, Reference, TrueLayerPaymentId) VALUES ('${payoutId}', '${accountId}', '${amount}', '${reference}', '${payment_id}')`;
+
+  try {
+    conn.query(query, (err, data) => {
+      if (err) return console.log({ message: err.message });
+      console.log(data);
+    });
+  } catch (err) {
+    console.log(err.response.data);
+  }
 };
 
 // Get access token for payouts
