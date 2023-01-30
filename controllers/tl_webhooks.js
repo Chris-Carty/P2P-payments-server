@@ -80,6 +80,57 @@ const addUserBankDetails = async (requestItems) => {
   }
 };
 
+// Active Rvnu Username
+const activateUsername = async (payment_id) => {
+  const query = `SELECT RvnuAccount.AccountID, RvnuAccount.RvnuCodeID FROM RvnuPayment INNER JOIN RvnuSession ON RvnuPayment.RvnuPaymentID=RvnuSession.RvnuPaymentID INNER JOIN RvnuAccount ON RvnuSession.AccountID=RvnuAccount.AccountID WHERE RvnuPayment.TrueLayerPaymentID='${payment_id}'`;
+
+  let rvnuCodeId = "";
+  let accountId = "";
+
+  try {
+    conn.query(query, (err, data) => {
+      if (err) return console.log({ message: err.message });
+
+      Object.keys(data).forEach(function (key) {
+        let row = data[key];
+        rvnuCodeId = row.RvnuCodeID;
+        accountId = row.AccountID;
+      });
+
+      if (rvnuCodeId === null) {
+        // Generate RvnuCode
+        // Generate unique RVNU code ID
+        const newRvnuCodeId = uuidv4();
+
+        // Insert new RVNU code in RvnuCode table
+        // AND link this RVNU code to a user account
+        const query = `INSERT INTO RvnuCode (RvnuCodeID, DateGenerated, Expiry) VALUES ('${newRvnuCodeId}',  CURRENT_TIMESTAMP, DATE_ADD(now(), INTERVAL 14 DAY))`;
+
+        try {
+          conn.query(query, (err, data) => {
+            if (err) return res.status(409).send({ message: err.message });
+
+            const query = `UPDATE RvnuAccount SET RvnuCodeID = '${newRvnuCodeId}' WHERE AccountID='${accountId}'`;
+
+            try {
+              conn.query(query, (err, data) => {
+                if (err) return res.status(409).send({ message: err.message });
+                //console.log(data);
+              });
+            } catch (err) {
+              console.log(err);
+            }
+          });
+        } catch (err) {
+          console.log(err);
+        }
+      }
+    });
+  } catch (err) {
+    console.log(err.response.data);
+  }
+};
+
 // Initiate commission payout
 const initiateCommissionPayout = async (requestItems) => {
   const payment_id = requestItems.payment_id;
@@ -238,8 +289,8 @@ export const handleEventNotification = async (req, res) => {
           addUserBankDetails(requestItems);
           // Pay out commission to user whose recommenderID was used
           initiateCommissionPayout(requestItems);
-          // Update Rvnu code expiry attached to username
-          // activateUsername()
+          // Update Rvnu code aassociated to the payer username
+          activateUsername(requestItems.payment_id);
           // updateRecommenderAssets
           // merchantPayout()
           // SendRvnucommissionSmS

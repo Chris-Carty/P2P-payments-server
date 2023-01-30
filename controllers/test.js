@@ -123,8 +123,34 @@ const updatePayoutTable = async (
   }
 };
 
-// Get access token for payouts
-const getAccessToken = async () => {
+// Retrieve access token to enable payment initiation
+export const getPaymentStatus = async () => {
+  const paymentId = "3392f185-49b2-4222-bfb1-243275107378";
+
+  const accessToken = getAccessToken();
+
+  accessToken.then(function (token) {
+    const request = {
+      method: "GET",
+      url: environmentUri + `/payments/${paymentId}`,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    };
+
+    axios
+      .request(request)
+      .then((response) =>
+        console.log(response.data.authorization_flow.configuration)
+      )
+      .catch(function (error) {
+        console.log(error);
+      });
+  });
+};
+
+const getAccessToken = () => {
   const options = {
     method: "POST",
     url: authServerUri + "/connect/token",
@@ -142,8 +168,88 @@ const getAccessToken = async () => {
       return response.data.access_token;
     })
     .catch(function (error) {
-      console.log(error);
+      return error;
     });
 };
 
-initiateCommissionPayout();
+/*
+
+// Retrieve status of a payout
+export const getPayoutStatus = async (req, res) => {
+  const accessToken = req.params.accessToken;
+  const payoutId = req.params.payoutId;
+
+  const request = {
+    method: "GET",
+    url: `https://api.truelayer-sandbox.com/payouts/${payoutId}`,
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+  };
+
+  axios
+    .request(request)
+    .then((response) => res.json(response.data))
+    .catch(function (error) {
+      res.send({ message: error });
+    });
+};
+
+*/
+
+// ActiveUsername
+const activateUsername = async (payment_id) => {
+  const query = `SELECT RvnuAccount.AccountID, RvnuAccount.RvnuCodeID FROM RvnuPayment INNER JOIN RvnuSession ON RvnuPayment.RvnuPaymentID=RvnuSession.RvnuPaymentID INNER JOIN RvnuAccount ON RvnuSession.AccountID=RvnuAccount.AccountID WHERE RvnuPayment.TrueLayerPaymentID='${payment_id}'`;
+
+  let rvnuCodeId = "";
+  let accountId = "";
+
+  try {
+    conn.query(query, (err, data) => {
+      if (err) return console.log({ message: err.message });
+
+      Object.keys(data).forEach(function (key) {
+        let row = data[key];
+        rvnuCodeId = row.RvnuCodeID;
+        accountId = row.AccountID;
+      });
+
+      if (rvnuCodeId === null) {
+        // Generate RvnuCode
+        // Generate unique RVNU code ID
+        const newRvnuCodeId = uuidv4();
+
+        // Insert new RVNU code in RvnuCode table
+        // AND link this RVNU code to a user account
+        const query = `INSERT INTO RvnuCode (RvnuCodeID, DateGenerated, Expiry) VALUES ('${newRvnuCodeId}',  CURRENT_TIMESTAMP, DATE_ADD(now(), INTERVAL 14 DAY))`;
+
+        try {
+          conn.query(query, (err, data) => {
+            if (err) return res.status(409).send({ message: err.message });
+
+            const query = `UPDATE RvnuAccount SET RvnuCodeID = '${newRvnuCodeId}' WHERE AccountID='${accountId}'`;
+
+            try {
+              conn.query(query, (err, data) => {
+                if (err) return res.status(409).send({ message: err.message });
+                console.log(data);
+              });
+            } catch (err) {
+              console.log(err);
+            }
+          });
+        } catch (err) {
+          console.log(err);
+        }
+      }
+    });
+  } catch (err) {
+    console.log(err.response.data);
+  }
+};
+
+//initiateCommissionPayout();
+//getPaymentStatus();
+
+activateUsername("57924506-341c-4cc3-9bf4-467ced2c0961");
