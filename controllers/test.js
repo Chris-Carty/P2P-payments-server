@@ -19,6 +19,15 @@ const environmentUri = process.env.ENVIRONMENT_URI;
 const initiateCommissionPayout = async () => {
   const payment_id = "fbe6d4bd-6d16-4881-961e-161f23801631";
 
+  let amountRounded = 0;
+  let RvnuRecommenderId = "";
+  let RvnuRecommenderIban = "";
+  let RvnuRecommenderName = "";
+  let reference = "";
+
+  // Set random idempotencyKey
+  const idempotencyKey = uuidv4();
+
   // Update database to save users payment details for next time
   const query = `SELECT RvnuPayment.Commission, RvnuAccount.AccountID, RvnuAccount.iban, RvnuAccount.AccountName FROM RvnuPayment INNER JOIN RvnuSession ON RvnuPayment.RvnuPaymentID=RvnuSession.RvnuPaymentID INNER JOIN RvnuAccount ON RvnuSession.RecommenderID=RvnuAccount.AccountID WHERE RvnuPayment.TrueLayerPaymentID='${payment_id}'`;
 
@@ -29,74 +38,71 @@ const initiateCommissionPayout = async () => {
       Object.keys(data).forEach(function (key) {
         // STEP 2: Store the vars from the query
         var row = data[key];
-        const amountRounded = 500;
-        const RvnuRecommenderId = row.AccountID;
-        const RvnuRecommenderIban = "GB22MONZ04000405871454";
-        const RvnuRecommenderName = "Christopher Carty";
-        const reference = "Pay. Share. Earn.";
+        amountRounded = 500;
+        RvnuRecommenderId = row.AccountID;
+        RvnuRecommenderIban = row.iban;
+        RvnuRecommenderName = row.AccountName;
+        reference = "Pay, share, earn.";
+      });
 
-        // Set random idempotencyKey
-        const idempotencyKey = uuidv4();
+      // Access Token
+      const accessToken = getAccessToken();
 
-        // Access Token
-        const accessToken = getAccessToken();
+      accessToken.then(function (token) {
+        // SOURCE ACCOUNT PRESELECTED ROUTE
+        const body =
+          '{"beneficiary":{"type":"external_account","account_identifier":{"type":"iban","iban":"' +
+          RvnuRecommenderIban +
+          '"},"reference":"' +
+          reference +
+          '","account_holder_name":"' +
+          RvnuRecommenderName +
+          '"},"merchant_account_id":"' +
+          rvnuMerchantAccountId +
+          '","amount_in_minor":' +
+          amountRounded +
+          ',"currency":"GBP"}';
 
-        accessToken.then(function (token) {
-          // SOURCE ACCOUNT PRESELECTED ROUTE
-          const body =
-            '{"beneficiary":{"type":"external_account","account_identifier":{"type":"iban","iban":"' +
-            RvnuRecommenderIban +
-            '"},"reference":"' +
-            reference +
-            '","account_holder_name":"' +
-            RvnuRecommenderName +
-            '"},"merchant_account_id":"' +
-            rvnuMerchantAccountId +
-            '","amount_in_minor":' +
-            amountRounded +
-            ',"currency":"GBP"}';
-
-          const tlSignature = tlSigning.sign({
-            kid,
-            privateKeyPem,
-            method: "POST", // as we're sending a POST request
-            path: "/payouts", // the path of our request
-            // All signed headers *must* be included unmodified in the request.
-            headers: {
-              "Idempotency-Key": idempotencyKey,
-              "Content-Type": "application/json",
-            },
-            body,
-          });
-
-          const request = {
-            method: "POST",
-            url: environmentUri + "/payouts",
-            // Request body & any signed headers *must* exactly match what was used to generate the signature.
-            data: body,
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Idempotency-Key": idempotencyKey,
-              "Content-Type": "application/json",
-              "Tl-Signature": tlSignature,
-            },
-          };
-
-          axios
-            .request(request)
-            .then((response) =>
-              updatePayoutTable(
-                response.data.id,
-                RvnuRecommenderId,
-                amountRounded,
-                reference,
-                payment_id
-              )
-            )
-            .catch(function (error) {
-              console.log(error.response.data);
-            });
+        const tlSignature = tlSigning.sign({
+          kid,
+          privateKeyPem,
+          method: "POST", // as we're sending a POST request
+          path: "/payouts", // the path of our request
+          // All signed headers *must* be included unmodified in the request.
+          headers: {
+            "Idempotency-Key": idempotencyKey,
+            "Content-Type": "application/json",
+          },
+          body,
         });
+
+        const request = {
+          method: "POST",
+          url: environmentUri + "/payouts",
+          // Request body & any signed headers *must* exactly match what was used to generate the signature.
+          data: body,
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Idempotency-Key": idempotencyKey,
+            "Content-Type": "application/json",
+            "Tl-Signature": tlSignature,
+          },
+        };
+
+        axios
+          .request(request)
+          .then((response) =>
+            updatePayoutTable(
+              response.data.id,
+              RvnuRecommenderId,
+              amountRounded,
+              reference,
+              payment_id
+            )
+          )
+          .catch(function (error) {
+            console.log(error.response.data);
+          });
       });
     });
   } catch (err) {
@@ -125,7 +131,7 @@ const updatePayoutTable = async (
 
 // Retrieve access token to enable payment initiation
 export const getPaymentStatus = async () => {
-  const paymentId = "3392f185-49b2-4222-bfb1-243275107378";
+  const paymentId = "f452fce8-b15f-40c0-9526-ccba4acfd86b";
 
   const accessToken = getAccessToken();
 
@@ -141,9 +147,7 @@ export const getPaymentStatus = async () => {
 
     axios
       .request(request)
-      .then((response) =>
-        console.log(response.data.authorization_flow.configuration)
-      )
+      .then((response) => console.log(response.data))
       .catch(function (error) {
         console.log(error);
       });
@@ -250,6 +254,6 @@ const activateUsername = async (payment_id) => {
 };
 
 //initiateCommissionPayout();
-//getPaymentStatus();
+getPaymentStatus();
 
-activateUsername("57924506-341c-4cc3-9bf4-467ced2c0961");
+//activateUsername("57924506-341c-4cc3-9bf4-467ced2c0961");

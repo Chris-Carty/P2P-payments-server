@@ -135,6 +135,16 @@ const activateUsername = async (payment_id) => {
 const initiateCommissionPayout = async (requestItems) => {
   const payment_id = requestItems.payment_id;
 
+  let amount = 0;
+  let amountRounded = 0;
+  let RvnuRecommenderId = "";
+  let RvnuRecommenderIban = "";
+  let RvnuRecommenderName = "";
+  let reference = "";
+
+  // Set random idempotencyKey
+  const idempotencyKey = uuidv4();
+
   // Update database to save users payment details for next time
   const query = `SELECT RvnuPayment.Commission, RvnuAccount.AccountID, RvnuAccount.iban, RvnuAccount.AccountName FROM RvnuPayment INNER JOIN RvnuSession ON RvnuPayment.RvnuPaymentID=RvnuSession.RvnuPaymentID INNER JOIN RvnuAccount ON RvnuSession.RecommenderID=RvnuAccount.AccountID WHERE RvnuPayment.TrueLayerPaymentID='${payment_id}'`;
 
@@ -145,76 +155,72 @@ const initiateCommissionPayout = async (requestItems) => {
       Object.keys(data).forEach(function (key) {
         // STEP 2: Store the vars from the query
         var row = data[key];
-        const amount = row.Commission * 100;
-        const amountRounded = Math.round((amount + Number.EPSILON) * 100) / 100;
-        const RvnuRecommenderId = row.AccountID;
-        const RvnuRecommenderIban = row.iban;
-        const RvnuRecommenderName = row.AccountName;
-        const reference = "Commission payout";
-        //const reference = uuidv4().substring(0, 18);
+        amount = row.Commission * 100;
+        amountRounded = Math.round((amount + Number.EPSILON) * 100) / 100;
+        RvnuRecommenderId = row.AccountID;
+        RvnuRecommenderIban = row.iban;
+        RvnuRecommenderName = row.AccountName;
+        reference = "Pay, share, earn.";
+      });
 
-        // Set random idempotencyKey
-        const idempotencyKey = uuidv4();
+      // Access Token
+      const accessToken = getAccessToken();
 
-        // Access Token
-        const accessToken = getAccessToken();
+      accessToken.then(function (token) {
+        // SOURCE ACCOUNT PRESELECTED ROUTE
+        const body =
+          '{"beneficiary":{"type":"external_account","account_identifier":{"type":"iban","iban":"' +
+          RvnuRecommenderIban +
+          '"},"reference":"' +
+          reference +
+          '","account_holder_name":"' +
+          RvnuRecommenderName +
+          '"},"merchant_account_id":"' +
+          rvnuMerchantAccountId +
+          '","amount_in_minor":' +
+          amountRounded +
+          ',"currency":"GBP"}';
 
-        accessToken.then(function (token) {
-          // SOURCE ACCOUNT PRESELECTED ROUTE
-          const body =
-            '{"beneficiary":{"type":"external_account","account_identifier":{"type":"iban","iban":"' +
-            RvnuRecommenderIban +
-            '"},"reference":"' +
-            reference +
-            '","account_holder_name":"' +
-            RvnuRecommenderName +
-            '"},"merchant_account_id":"' +
-            rvnuMerchantAccountId +
-            '","amount_in_minor":' +
-            amountRounded +
-            ',"currency":"GBP"}';
-
-          const tlSignature = tlSigning.sign({
-            kid,
-            privateKeyPem,
-            method: "POST", // as we're sending a POST request
-            path: "/payouts", // the path of our request
-            // All signed headers *must* be included unmodified in the request.
-            headers: {
-              "Idempotency-Key": idempotencyKey,
-              "Content-Type": "application/json",
-            },
-            body,
-          });
-
-          const request = {
-            method: "POST",
-            url: environmentUri + "/payouts",
-            // Request body & any signed headers *must* exactly match what was used to generate the signature.
-            data: body,
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Idempotency-Key": idempotencyKey,
-              "Content-Type": "application/json",
-              "Tl-Signature": tlSignature,
-            },
-          };
-
-          axios
-            .request(request)
-            .then((response) =>
-              updatePayoutTable(
-                response.data.id,
-                RvnuRecommenderId,
-                amountRounded,
-                reference,
-                payment_id
-              )
-            )
-            .catch(function (error) {
-              console.log(error.response.data);
-            });
+        const tlSignature = tlSigning.sign({
+          kid,
+          privateKeyPem,
+          method: "POST", // as we're sending a POST request
+          path: "/payouts", // the path of our request
+          // All signed headers *must* be included unmodified in the request.
+          headers: {
+            "Idempotency-Key": idempotencyKey,
+            "Content-Type": "application/json",
+          },
+          body,
         });
+
+        const request = {
+          method: "POST",
+          url: environmentUri + "/payouts",
+          // Request body & any signed headers *must* exactly match what was used to generate the signature.
+          data: body,
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Idempotency-Key": idempotencyKey,
+            "Content-Type": "application/json",
+            "Tl-Signature": tlSignature,
+          },
+        };
+
+        axios
+          .request(request)
+          .then((response) =>
+            updatePayoutTable(
+              response.data.id,
+              RvnuRecommenderId,
+              amountRounded,
+              reference,
+              payment_id
+            )
+          )
+          .catch(function (error) {
+            console.log(error.response.data);
+          });
       });
     });
   } catch (err) {
