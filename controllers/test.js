@@ -38,7 +38,7 @@ const initiateCommissionPayout = async () => {
       Object.keys(data).forEach(function (key) {
         // STEP 2: Store the vars from the query
         var row = data[key];
-        amountRounded = 500;
+        amountRounded = 600;
         RvnuRecommenderId = row.AccountID;
         RvnuRecommenderIban = row.iban;
         RvnuRecommenderName = row.AccountName;
@@ -131,7 +131,7 @@ const updatePayoutTable = async (
 
 // Retrieve access token to enable payment initiation
 export const getPaymentStatus = async () => {
-  const paymentId = "f452fce8-b15f-40c0-9526-ccba4acfd86b";
+  const paymentId = "c0659241-3e05-4d1c-85f5-0b3f2ba73bdf";
 
   const accessToken = getAccessToken();
 
@@ -253,7 +253,7 @@ const activateUsername = async (payment_id) => {
   }
 };
 
-//initiateCommissionPayout();
-getPaymentStatus();
+initiateCommissionPayout();
+//getPaymentStatus();
 
 //activateUsername("57924506-341c-4cc3-9bf4-467ced2c0961");
