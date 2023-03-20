@@ -131,7 +131,7 @@ const updatePayoutTable = async (
 
 // Retrieve access token to enable payment initiation
 export const getPaymentStatus = async () => {
-  const paymentId = "c0659241-3e05-4d1c-85f5-0b3f2ba73bdf";
+  const paymentId = "82edb4ba-2927-4492-a4e1-324de1c63980";
 
   const accessToken = getAccessToken();
 
@@ -253,7 +253,7 @@ const activateUsername = async (payment_id) => {
   }
 };
 
-initiateCommissionPayout();
-//getPaymentStatus();
+//initiateCommissionPayout();
+getPaymentStatus();
 
 //activateUsername("57924506-341c-4cc3-9bf4-467ced2c0961");
