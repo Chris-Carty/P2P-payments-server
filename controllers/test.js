@@ -17,7 +17,7 @@ const environmentUri = process.env.ENVIRONMENT_URI;
 
 // Initiate commission payout
 const initiateCommissionPayout = async () => {
-  const payment_id = "fbe6d4bd-6d16-4881-961e-161f23801631";
+  const payment_id = "6378c99e-b90f-44af-8d0b-82a58aaaaa8d";
 
   let amountRounded = 0;
   let RvnuRecommenderId = "";
@@ -38,11 +38,11 @@ const initiateCommissionPayout = async () => {
       Object.keys(data).forEach(function (key) {
         // STEP 2: Store the vars from the query
         var row = data[key];
-        amountRounded = 600;
+        amountRounded = 170;
         RvnuRecommenderId = row.AccountID;
         RvnuRecommenderIban = row.iban;
         RvnuRecommenderName = row.AccountName;
-        reference = "Pay, share, earn.";
+        reference = "Pay, share, and earn.";
       });
 
       // Access Token
@@ -253,7 +253,7 @@ const activateUsername = async (payment_id) => {
   }
 };
 
-//initiateCommissionPayout();
-getPaymentStatus();
+initiateCommissionPayout();
+//getPaymentStatus();
 
 //activateUsername("57924506-341c-4cc3-9bf4-467ced2c0961");
