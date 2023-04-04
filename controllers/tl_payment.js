@@ -119,7 +119,7 @@ const initiatePayment = (
     payerSortCode === null ||
     payerAccountNumber === null ||
     payerAccountName === null
-      ? '{"payment_method":{"type":"bank_transfer","provider_selection":{"type":"user_selected","scheme_selection":{"type":"instant_only","allow_remitter_fee":false}},"beneficiary":{"type":"merchant_account", "account_holder_name": "Rvnu Social","merchant_account_id":"' +
+      ? '{"payment_method":{"type":"bank_transfer","provider_selection":{"type":"user_selected","scheme_selection":{"type":"instant_only","allow_remitter_fee":false}},"beneficiary":{"type":"merchant_account","merchant_account_id":"' +
         rvnuMerchantAccountId +
         '", "reference":"' +
         reference +
@@ -142,7 +142,7 @@ const initiatePayment = (
         payerName +
         '"}, "provider_id": "' +
         payerProviderId +
-        '","scheme_id": "faster_payments_service"},"beneficiary":{"type":"merchant_account", "account_holder_name": "Rvnu Social","merchant_account_id":"' +
+        '","scheme_id": "faster_payments_service"},"beneficiary":{"type":"merchant_account","merchant_account_id":"' +
         rvnuMerchantAccountId +
         '", "reference":"' +
         reference +
