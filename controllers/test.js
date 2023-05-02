@@ -38,7 +38,7 @@ const initiateCommissionPayout = async () => {
       Object.keys(data).forEach(function (key) {
         // STEP 2: Store the vars from the query
         var row = data[key];
-        amountRounded = 170;
+        amountRounded = 510;
         RvnuRecommenderId = row.AccountID;
         RvnuRecommenderIban = row.iban;
         RvnuRecommenderName = row.AccountName;

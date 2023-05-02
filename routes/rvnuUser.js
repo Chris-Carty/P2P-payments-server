@@ -3,7 +3,8 @@ import {
   updateBankAccount,
   getUserBankAccount,
   getAccountId,
-  getUsername,
+  checkExists,
+  updateUsername,
   generateAccountId,
   updateTotalAssets,
   createAccount,
@@ -20,14 +21,15 @@ router.post(
 );
 router.get("/getUserBankAccount/:userId", getUserBankAccount);
 router.get("/getAccountId/:num", getAccountId);
+router.get("/checkExists/:num", checkExists);
 router.get("/updateAssets/:accountId/:paymentId", updateTotalAssets);
 router.post(
-  "/createAccount/:firstname/:lastname/:username/:mobile/:dob/:accountNum/:sortCode/:providerId",
+  "/createAccount/:name/:email/:phoneNumber/:dob",
   createAccount
 );
 router.post("/generateAccountId/:mobile/:sessionId", generateAccountId);
 router.get("/recommender/account/:accountId", getRecommenderAccount);
-router.get("/username/:username", getUsername);
+router.post("/updateUsername/:username/:phoneNumber", updateUsername);
 router.get(
   "/validateRecommender/:username/:sessionId/:clientId",
   getRecommender

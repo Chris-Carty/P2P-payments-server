@@ -2,8 +2,7 @@
 CREATE TABLE RvnuAccount
 (
  AccountID varchar(36) NOT NULL PRIMARY KEY,
- FirstName varchar(50) DEFAULT NULL,
- LastName varchar(50) DEFAULT NULL,
+ Name varchar(50) DEFAULT NULL,
  DoB varchar(10) DEFAULT NULL,
  MobileNumber varchar(50) NOT NULL,
  Username varchar(15) DEFAULT NULL,
@@ -26,15 +25,15 @@ CREATE TABLE RvnuAccount
 
 -- Insert rows into table 'RvnuAccount'
 INSERT INTO RvnuAccount
- (AccountID, FirstName, LastName, MobileNumber, Username, RvnuCodeID, AccountCreated)
+ (AccountID, Name, MobileNumber, Username, RvnuCodeID, AccountCreated)
 VALUES
- ('5548b45b-5580-41be-bad6-b8b1098d3d7d', 'Chris', 'Carty', '+447527943282', 'chris', 'ea0f16f6-9302-4ad1-87f5-a174133ec425', '2022-06-01 22:42:00'),
+ ('5548b45b-5580-41be-bad6-b8b1098d3d7d', 'Chris Carty', '+447527943282', 'chris', 'ea0f16f6-9302-4ad1-87f5-a174133ec425', '2022-06-01 22:42:00'),
 
- ('85f13fd6-bd1d-4272-8256-ec521eec091c', 'Jack', 'Hayden','+447487811150', 'jack', NULL, '2022-06-01 22:42:00'),
+ ('85f13fd6-bd1d-4272-8256-ec521eec091c', 'Jack Hayden','+447487811150', 'jack', NULL, '2022-06-01 22:42:00'),
 
- ('36f1bef5-1a21-45ba-84ba-4f82911d1ee5', 'Colette', 'Slater-Barrass','+447508259020', 'colly', 'ce19e022-6bcb-4e16-8b85-e47884aa62ed', '2022-06-01 22:42:00'),
+ ('36f1bef5-1a21-45ba-84ba-4f82911d1ee5', 'Colette Slater-Barrass','+447508259020', 'colly', 'ce19e022-6bcb-4e16-8b85-e47884aa62ed', '2022-06-01 22:42:00'),
 
- ('3a88145b-7113-4c68-8bc5-dd5fad9546f3', 'Hassan', 'Sharif','+447833468832', 'hassan', '468fdb04-76c7-41fd-8d9b-8a15b642e770', '2022-06-01 22:42:00');
+ ('3a88145b-7113-4c68-8bc5-dd5fad9546f3', 'Hassan Sharif','+447833468832', 'hassan', '468fdb04-76c7-41fd-8d9b-8a15b642e770', '2022-06-01 22:42:00');
 
 -- Create the table in the specified schema
 CREATE TABLE RvnuCode
