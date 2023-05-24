@@ -4,6 +4,8 @@ import {
   getUserBankAccount,
   getAccountId,
   checkExists,
+  checkExistsSignUp,
+  checkUsernameAvailable,
   updateUsername,
   generateAccountId,
   updateTotalAssets,
@@ -22,14 +24,16 @@ router.post(
 router.get("/getUserBankAccount/:userId", getUserBankAccount);
 router.get("/getAccountId/:num", getAccountId);
 router.get("/checkExists/:num", checkExists);
+router.get("/checkExistsSignUp/:phoneNumber/:email", checkExistsSignUp);
 router.get("/updateAssets/:accountId/:paymentId", updateTotalAssets);
 router.post(
-  "/createAccount/:name/:email/:phoneNumber/:dob",
+  "/createAccount/:fullName/:email/:phoneNumber/:dob/:username",
   createAccount
 );
 router.post("/generateAccountId/:mobile/:sessionId", generateAccountId);
 router.get("/recommender/account/:accountId", getRecommenderAccount);
 router.post("/updateUsername/:username/:phoneNumber", updateUsername);
+router.get("/checkUsernameAvailable/:username", checkUsernameAvailable);
 router.get(
   "/validateRecommender/:username/:sessionId/:clientId",
   getRecommender

@@ -9,12 +9,18 @@ export const createAccount = async (req, res) => {
   // Generate unique Account ID
   const accountId = uuidv4();
   // Account Info
-  const name = req.params.name;
+  const fullName = req.params.fullName;
   const email = req.params.email;
   const phoneNumber = req.params.phoneNumber;
   const dob = req.params.dob;
+  const username = req.params.username
 
-  const query = `INSERT INTO RvnuAccount (AccountID, Name, DoB, Email, MobileNumber, AccountCreated) VALUES ( '${accountId}', '${name}', '${dob}', '${email}', '${phoneNumber}', CURRENT_TIMESTAMP)`;
+  // Parse fullName to get First & Last names
+  // LOGIC
+  const firstName = ''
+  const lastName = ''
+
+  const query = `INSERT INTO RvnuAccount (AccountID, FirstName, LastName, DoB, MobileNumber, Username, Email,  AccountCreated) VALUES ( '${accountId}', '${firstName}', '${lastName}', '${dob}', '${phoneNumber}', '${username}', '${email}', CURRENT_TIMESTAMP)`;
 
   try {
     conn.query(query, (err, data) => {
@@ -94,6 +100,23 @@ export const getRecommenderAccount = async (req, res) => {
 };
 
 // Update username
+export const checkUsernameAvailable = async (req, res) => {
+  const username = req.params.username;
+
+
+  const query = `SELECT EXISTS(SELECT 1 FROM RvnuAccount WHERE Username = '${username}')`
+
+  try {
+    conn.query(query, (err, data) => {
+      if (err) return res.status(409).send({ message: err.message });
+      res.status(200).json({ data });
+    });
+  } catch (err) {
+    res.status(409).send({ message: err.message });
+  }
+};
+
+// Update username
 export const updateUsername = async (req, res) => {
   const username = req.params.username;
   const phoneNumber = req.params.phoneNumber;
@@ -127,10 +150,27 @@ export const getUserBankAccount = async (req, res) => {
 };
 
 export const checkExists = async (req, res) => {
-  // Gets users preferred payment account
+  // Checks if user exists with this mobile number
   const mobileNumber = req.params.num;
 
   const query = `SELECT AccountID FROM RvnuAccount WHERE MobileNumber =${mobileNumber}`;
+
+  try {
+    conn.query(query, (err, data) => {
+      if (err) return res.status(409).send({ message: err.message });
+      res.status(200).json({ data });
+    });
+  } catch (err) {
+    res.status(409).send({ message: err.message });
+  }
+};
+
+export const checkExistsSignUp = async (req, res) => {
+  // Checks if user exists with this mobile number or email
+  const phoneNumber = req.params.phoneNumber;
+  const email = req.params.email;
+
+  const query = `SELECT AccountID FROM RvnuAccount WHERE MobileNumber ='${phoneNumber}' OR Email ='${email}'`;
 
   try {
     conn.query(query, (err, data) => {

@@ -2,9 +2,10 @@
 CREATE TABLE RvnuAccount
 (
  AccountID varchar(36) NOT NULL PRIMARY KEY,
- Name varchar(50) DEFAULT NULL,
+ FirstName varchar(50) DEFAULT NULL,
+ LastName varchar(50) DEFAULT NULL,
  DoB varchar(10) DEFAULT NULL,
- MobileNumber varchar(50) NOT NULL,
+ MobileNumber varchar(50) DEFAULT NULL,
  Username varchar(15) DEFAULT NULL,
  Email varchar(50) DEFAULT NULL,
  Password varchar(150) DEFAULT NULL,
