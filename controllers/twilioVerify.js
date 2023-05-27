@@ -59,6 +59,22 @@ export const verifyOtp = async (req, res) => {
     });
 };
 
+// Verifies OTP entered by the user on Sign Up
+export const verifyOtpSignUp = async (req, res) => {
+  const phoneNum = req.params.phoneNumber;
+  const otp = req.params.inputOtp;
+
+  client.verify
+    .services(serviceID)
+    .verificationChecks.create({ to: phoneNum, code: otp })
+    .then((verification_check) => {
+      res.status(200).json({ verification_check })
+    })
+    .catch((error) => {
+      res.status(404).json({ error });
+    });
+};
+
 // Send new RVNU code to user via SMS.
 export const sendUsernameExpiry = async (req, res) => {
   const payerFirstname = req.params.payerFirstname;

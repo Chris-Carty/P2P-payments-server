@@ -16,9 +16,8 @@ export const createAccount = async (req, res) => {
   const username = req.params.username
 
   // Parse fullName to get First & Last names
-  // LOGIC
-  const firstName = ''
-  const lastName = ''
+  const firstName = fullName.split(' ')[0];
+  const lastName = fullName.split(' ')[1];
 
   const query = `INSERT INTO RvnuAccount (AccountID, FirstName, LastName, DoB, MobileNumber, Username, Email,  AccountCreated) VALUES ( '${accountId}', '${firstName}', '${lastName}', '${dob}', '${phoneNumber}', '${username}', '${email}', CURRENT_TIMESTAMP)`;
 
@@ -101,6 +100,7 @@ export const getRecommenderAccount = async (req, res) => {
 
 // Update username
 export const checkUsernameAvailable = async (req, res) => {
+
   const username = req.params.username;
 
 

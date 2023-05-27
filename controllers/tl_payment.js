@@ -15,8 +15,7 @@ const rvnuMerchantAccountId = process.env.RVNU_MERCHANT_ACCOUNT_ID;
 const authServerUri = process.env.AUTH_SERVER_URI;
 const environmentUri = process.env.ENVIRONMENT_URI;
 // RedirectURI
-// const return_uri = "https://rvnu.app/status";
-const return_uri =  "https://rvnu.app/payTheBride";
+const return_uri = "https://rvnu.app/status";
 
 export const generatePaymentLink = async (req, res) => {
   // Set request vars
