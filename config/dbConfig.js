@@ -19,7 +19,7 @@ const conn = mysql.createConnection(config);
 
 conn.connect((err) => {
 if (err) throw err;
-console.log('Connected to RvnuDatabase');
+console.log('Connected to Database');
 });
 
 

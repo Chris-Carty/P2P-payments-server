@@ -1,5 +1,5 @@
 {
-  "name": "RVNU-production-server-private",
+  "name": "production-server",
   "version": "1.0.0",
   "description": "",
   "main": "server.js",
