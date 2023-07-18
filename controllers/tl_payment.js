@@ -15,7 +15,7 @@ const merchantAccountId = process.env.MERCHANT_ACCOUNT_ID;
 const authServerUri = process.env.AUTH_SERVER_URI;
 const environmentUri = process.env.ENVIRONMENT_URI;
 // RedirectURI
-const return_uri = "http://localhost:3000/status";
+const return_uri = "https://gift-laura.vercel.app/status";
 
 const getAccessToken = () => {
   const options = {
