@@ -11,244 +11,80 @@ const clientId = process.env.CLIENT_ID;
 const clientSecret = process.env.CLIENT_SECRET;
 const kid = process.env.CERTIFICATE_ID;
 const privateKeyPem = process.env.PRIVATE_KEY;
-const rvnuMerchantAccountId = process.env.RVNU_MERCHANT_ACCOUNT_ID;
+const merchantAccountId = process.env.MERCHANT_ACCOUNT_ID;
 const authServerUri = process.env.AUTH_SERVER_URI;
 const environmentUri = process.env.ENVIRONMENT_URI;
 
 /*------------ FUNCTIONS TO CALL WHEN WEBHOOK RECIEVED ------------*/
 
-// Logic to listen for and handle TrueLayer webhooks
-
-const paymentSettled = async (status, payment_id, event_id, settled_at) => {
-  // Update database to reflect 'payment_settled' status
-  const query = `UPDATE RvnuPayment SET WebhookStatus = '${status}', WebhookEventID = '${event_id}', WebhookDatetime = '${settled_at}' WHERE TrueLayerPaymentID = '${payment_id}'`;
-
-  try {
-    conn.query(query, (err, data) => {
-      if (err) return console.log({ message: err.message });
-    });
-  } catch (err) {
-    console.log(err.response.data);
-  }
-};
-
-const paymentFailed = async (
-  status,
-  payment_id,
-  event_id,
-  failed_at,
-  description,
-  provider_id
-) => {
-  // Update database to reflect 'payment_settled' status
-  const query = `UPDATE RvnuPayment SET WebhookStatus = '${status}', WebhookEventID = '${event_id}', WebhookDatetime = '${failed_at}', WebhookDescription = '${description}_${provider_id}' WHERE TrueLayerPaymentID = '${payment_id}'`;
-
-  try {
-    conn.query(query, (err, data) => {
-      if (err) return console.log({ message: err.message });
-    });
-  } catch (err) {
-    console.log(err.response.data);
-  }
-};
-
-const addUserBankDetails = async (requestItems) => {
-  // Payer info to save
-  const user_id = requestItems.user_id;
-
-  const account_holder_name = requestItems.payment_source.account_holder_name;
-
-  const sort_code =
-    requestItems.payment_source.account_identifiers[0].sort_code;
-
-  const account_number =
-    requestItems.payment_source.account_identifiers[0].account_number;
-
-  const iban = requestItems.payment_source.account_identifiers[1].iban;
-
-  const provider_id = requestItems.payment_method.provider_id;
-
-  // Update database to save users payment details for next time
-  const query = `UPDATE RvnuAccount SET AccountName = '${account_holder_name}', SortCode = '${sort_code}', AccountNumber = '${account_number}', iban = '${iban}', Tl_providerId = '${provider_id}' WHERE AccountID = '${user_id}'`;
-
-  try {
-    conn.query(query, (err, data) => {
-      if (err) return console.log({ message: err.message });
-    });
-  } catch (err) {
-    console.log(err.response.data);
-  }
-};
-
-// Active Rvnu Username
-const activateUsername = async (payment_id) => {
-  const query = `SELECT RvnuAccount.AccountID, RvnuAccount.RvnuCodeID FROM RvnuPayment INNER JOIN RvnuSession ON RvnuPayment.RvnuPaymentID=RvnuSession.RvnuPaymentID INNER JOIN RvnuAccount ON RvnuSession.AccountID=RvnuAccount.AccountID WHERE RvnuPayment.TrueLayerPaymentID='${payment_id}'`;
-
-  let rvnuCodeId = "";
-  let accountId = "";
-
-  try {
-    conn.query(query, (err, data) => {
-      if (err) return console.log({ message: err.message });
-
-      Object.keys(data).forEach(function (key) {
-        let row = data[key];
-        rvnuCodeId = row.RvnuCodeID;
-        accountId = row.AccountID;
-      });
-
-      if (rvnuCodeId === null) {
-        // Generate RvnuCode
-        // Generate unique RVNU code ID
-        const newRvnuCodeId = uuidv4();
-
-        // Insert new RVNU code in RvnuCode table
-        // AND link this RVNU code to a user account
-        const query = `INSERT INTO RvnuCode (RvnuCodeID, DateGenerated, Expiry) VALUES ('${newRvnuCodeId}',  CURRENT_TIMESTAMP, DATE_ADD(now(), INTERVAL 14 DAY))`;
-
-        try {
-          conn.query(query, (err, data) => {
-            if (err) return res.status(409).send({ message: err.message });
-
-            const query = `UPDATE RvnuAccount SET RvnuCodeID = '${newRvnuCodeId}' WHERE AccountID='${accountId}'`;
-
-            try {
-              conn.query(query, (err, data) => {
-                if (err) return res.status(409).send({ message: err.message });
-                //console.log(data);
-              });
-            } catch (err) {
-              console.log(err);
-            }
-          });
-        } catch (err) {
-          console.log(err);
-        }
-      }
-    });
-  } catch (err) {
-    console.log(err.response.data);
-  }
-};
-
 // Initiate commission payout
-const initiateCommissionPayout = async (requestItems) => {
-  const payment_id = requestItems.payment_id;
-
-  let amount = 0;
-  let amountRounded = 0;
-  let RvnuRecommenderId = "";
-  let RvnuRecommenderIban = "";
-  let RvnuRecommenderName = "";
-  let reference = "";
+const initiatePayout = async (payment_id) => {
+  //console.log("initiating payout");
 
   // Set random idempotencyKey
   const idempotencyKey = uuidv4();
+  const payoutAccountIban = "GB70HLFX11039701183932";
+  const payoutAccountName = "L Carty";
+  const reference = "Gift payout";
 
-  // Update database to save users payment details for next time
-  const query = `SELECT RvnuPayment.Commission, RvnuAccount.AccountID, RvnuAccount.iban, RvnuAccount.AccountName FROM RvnuPayment INNER JOIN RvnuSession ON RvnuPayment.RvnuPaymentID=RvnuSession.RvnuPaymentID INNER JOIN RvnuAccount ON RvnuSession.RecommenderID=RvnuAccount.AccountID WHERE RvnuPayment.TrueLayerPaymentID='${payment_id}'`;
+  // Access Token
+  const accessToken = getAccessToken();
 
-  try {
-    conn.query(query, (err, data) => {
-      if (err) return console.log({ message: err.message });
+  accessToken.then(function (token) {
+    const paymentAmount = getPayment(token, payment_id);
 
-      Object.keys(data).forEach(function (key) {
-        // STEP 2: Store the vars from the query
-        var row = data[key];
-        amount = row.Commission * 100;
-        amountRounded = Math.round((amount + Number.EPSILON) * 100) / 100;
-        RvnuRecommenderId = row.AccountID;
-        RvnuRecommenderIban = row.iban;
-        RvnuRecommenderName = row.AccountName;
-        reference = "Pay, share, earn.";
+    paymentAmount.then(function (amount) {
+      const body =
+        '{"beneficiary":{"type":"external_account","account_identifier":{"type":"iban","iban":"' +
+        payoutAccountIban +
+        '"},"reference":"' +
+        reference +
+        '","account_holder_name":"' +
+        payoutAccountName +
+        '"},"merchant_account_id":"' +
+        merchantAccountId +
+        '","amount_in_minor":' +
+        amount +
+        ',"currency":"GBP"}';
+
+      const tlSignature = tlSigning.sign({
+        kid,
+        privateKeyPem,
+        method: "POST", // as we're sending a POST request
+        path: "/payouts", // the path of our request
+        // All signed headers *must* be included unmodified in the request.
+        headers: {
+          "Idempotency-Key": idempotencyKey,
+          "Content-Type": "application/json",
+        },
+        body,
       });
 
-      // Access Token
-      const accessToken = getAccessToken();
+      const request = {
+        method: "POST",
+        url: environmentUri + "/payouts",
+        // Request body & any signed headers *must* exactly match what was used to generate the signature.
+        data: body,
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Idempotency-Key": idempotencyKey,
+          "Content-Type": "application/json",
+          "Tl-Signature": tlSignature,
+        },
+      };
 
-      accessToken.then(function (token) {
-        // SOURCE ACCOUNT PRESELECTED ROUTE
-        const body =
-          '{"beneficiary":{"type":"external_account","account_identifier":{"type":"iban","iban":"' +
-          RvnuRecommenderIban +
-          '"},"reference":"' +
-          reference +
-          '","account_holder_name":"' +
-          RvnuRecommenderName +
-          '"},"merchant_account_id":"' +
-          rvnuMerchantAccountId +
-          '","amount_in_minor":' +
-          amountRounded +
-          ',"currency":"GBP"}';
-
-        const tlSignature = tlSigning.sign({
-          kid,
-          privateKeyPem,
-          method: "POST", // as we're sending a POST request
-          path: "/payouts", // the path of our request
-          // All signed headers *must* be included unmodified in the request.
-          headers: {
-            "Idempotency-Key": idempotencyKey,
-            "Content-Type": "application/json",
-          },
-          body,
+      axios
+        .request(request)
+        .then((response) => {
+          return response;
+        })
+        .catch(function (error) {
+          console.log(error);
         });
-
-        const request = {
-          method: "POST",
-          url: environmentUri + "/payouts",
-          // Request body & any signed headers *must* exactly match what was used to generate the signature.
-          data: body,
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Idempotency-Key": idempotencyKey,
-            "Content-Type": "application/json",
-            "Tl-Signature": tlSignature,
-          },
-        };
-
-        axios
-          .request(request)
-          .then((response) =>
-            updatePayoutTable(
-              response.data.id,
-              RvnuRecommenderId,
-              amountRounded,
-              reference,
-              payment_id
-            )
-          )
-          .catch(function (error) {
-            console.log(error.response.data);
-          });
-      });
     });
-  } catch (err) {
-    console.log(err.response.data);
-  }
+  });
 };
 
-const updatePayoutTable = async (
-  payoutId,
-  accountId,
-  amount,
-  reference,
-  payment_id
-) => {
-  // Update database to save users payment details for next time
-  const query = `INSERT INTO RvnuCommissionPayout (PayoutID, AccountID, TotalAmount, Reference, TrueLayerPaymentId) VALUES ('${payoutId}', '${accountId}', '${amount}', '${reference}', '${payment_id}')`;
-
-  try {
-    conn.query(query, (err, data) => {
-      if (err) return console.log({ message: err.message });
-      console.log(data);
-    });
-  } catch (err) {
-    console.log(err.response.data);
-  }
-};
-
-// Get access token for payouts
 const getAccessToken = async () => {
   const options = {
     method: "POST",
@@ -271,6 +107,27 @@ const getAccessToken = async () => {
     });
 };
 
+const getPayment = async (token, payment_id) => {
+  const options = {
+    method: "GET",
+    url: environmentUri + "/v3/payments/" + payment_id,
+    // Request body & any signed headers *must* exactly match what was used to generate the signature.
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  };
+
+  return axios
+    .request(options)
+    .then((response) => {
+      return response.data.amount_in_minor;
+    })
+    .catch(function (error) {
+      console.log(error);
+    });
+};
+
 // Handle webhook notifications sent from TrueLayer
 // Webhook URI set in the TrueLayer console (use ngrok whilst in development mode)
 // Payment notifictions have three 'type'(s):
@@ -285,42 +142,20 @@ export const handleEventNotification = async (req, res) => {
       console.log(requestItems);
       const status = requestItems.type;
       const payment_id = requestItems.payment_id;
-      const event_id = requestItems.event_id;
 
       switch (status) {
         case "payment_settled":
-          const settled_at = requestItems.settled_at;
-          paymentSettled(status, payment_id, event_id, settled_at);
-          // Save payers bank deatild for next time
-          addUserBankDetails(requestItems);
-          // Pay out commission to user whose recommenderID was used
-          initiateCommissionPayout(requestItems);
-          // Update Rvnu code aassociated to the payer username
-          activateUsername(requestItems.payment_id);
-          // updateRecommenderAssets
-          // merchantPayout()
-          // SendRvnucommissionSmS
-          // updateRvnuFlowSuccessColumn
-          // Send newUserSmS
-          // Notify TrueLayer webhook delivered successfully
+          // Send payment amount
+          initiatePayout(payment_id);
           break;
 
         case "payment_failed":
-          const provider_id = requestItems.payment_method.provider_id;
-          const description = requestItems.failure_reason;
-          const failed_at = requestItems.failed_at;
-          paymentFailed(
-            status,
-            payment_id,
-            event_id,
-            failed_at,
-            description,
-            provider_id
-          );
+          console.log("Ignore webhook");
+
           break;
 
         default:
-        //paymentFailed()
+          console.log("Ignore webhook");
       }
     }
   } catch (error) {
